@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Login – CAFinalPro</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0a0f;--card:#1a1a26;--border:#2a2a3d;--accent:#f97316;--text:#f1f1f8;--muted:#8888aa;--surface:#12121a;--gradient:linear-gradient(135deg,#f97316,#ef4444);}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;}
+.box{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:2.5rem;width:100%;max-width:380px;}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.3rem;margin-bottom:0.2rem;}
+.logo span{color:var(--accent);}
+.badge{font-size:0.65rem;color:var(--accent);background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.2);padding:0.12rem 0.5rem;border-radius:4px;font-weight:700;display:inline-block;margin-bottom:1.5rem;}
+h2{font-family:'Syne',sans-serif;font-size:1.15rem;font-weight:800;margin-bottom:0.25rem;}
+.sub{font-size:0.8rem;color:var(--muted);margin-bottom:1.5rem;}
+.fg{margin-bottom:0.9rem;}
+.fg label{display:block;font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.3rem;}
+.fg input{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:0.7rem 0.9rem;border-radius:10px;font-size:0.87rem;font-family:'DM Sans',sans-serif;outline:none;transition:border-color 0.2s;}
+.fg input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(249,115,22,0.1);}
+.fg input::placeholder{color:rgba(136,136,170,0.35);}
+.btn{width:100%;background:var(--gradient);color:white;border:none;padding:0.78rem;border-radius:10px;font-size:0.9rem;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:opacity 0.2s;margin-top:0.5rem;}
+.btn:hover{opacity:0.88;}
+.error{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#fca5a5;padding:0.65rem 0.9rem;border-radius:9px;font-size:0.82rem;margin-bottom:0.75rem;}
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="logo">CA<span>Final</span>Pro</div>
+  <div class="badge">🔐 Admin Access Only</div>
+  <h2>Admin Login</h2>
+  <div class="sub">Sign in to manage your platform.</div>
+  {% if error %}<div class="error">{{ error }}</div>{% endif %}
+  <form method="POST">
+    <div class="fg"><label>Username</label><input type="text" name="username" placeholder="admin" required autofocus></div>
+    <div class="fg"><label>Password</label><input type="password" name="password" placeholder="••••••••" required></div>
+    <button class="btn" type="submit">Sign In to Admin Panel</button>
+  </form>
+</div>
+</body>
+</html>

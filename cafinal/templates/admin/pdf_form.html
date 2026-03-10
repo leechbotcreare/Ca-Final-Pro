@@ -1,0 +1,57 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ action }} PDF – Admin{% endblock %}
+{% block content %}
+<div class="page-hdr">
+  <div>
+    <div class="page-title">{{ action }} PDF</div>
+    <div class="page-sub">{% if action == 'Edit' %}Editing: {{ pdf.title }}{% else %}Add a new PDF document{% endif %}</div>
+  </div>
+  <a href="/admin/pdfs" class="btn btn-ghost">← Back to PDFs</a>
+</div>
+
+<div class="form-card">
+  {% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+  <form method="POST">
+    <div class="fg">
+      <label>PDF Title *</label>
+      <input type="text" name="title" value="{{ pdf.title or '' }}" placeholder="e.g. FR – Complete Ind AS Summary Notes" required autofocus>
+    </div>
+    <div class="form-row">
+      <div class="fg">
+        <label>Subject *</label>
+        <select name="subject" required>
+          <option value="">Select Subject</option>
+          <option value="FR"    {% if pdf.subject == 'FR'    %}selected{% endif %}>Financial Reporting (FR)</option>
+          <option value="AFM"   {% if pdf.subject == 'AFM'   %}selected{% endif %}>Adv. Financial Mgmt (AFM)</option>
+          <option value="AUDIT" {% if pdf.subject == 'AUDIT' %}selected{% endif %}>Adv. Auditing & Ethics</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>Number of Pages</label>
+        <input type="number" name="pages" value="{{ pdf.pages or '' }}" placeholder="e.g. 124" min="1">
+      </div>
+    </div>
+    <div class="fg">
+      <label>Google Drive File ID *</label>
+      <input type="text" name="file_id" value="{{ pdf.file_id or '' }}" placeholder="e.g. 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74" required>
+      <div class="hint">📌 From link: drive.google.com/file/d/<strong>THIS_PART_HERE</strong>/view — make sure file is shared publicly</div>
+    </div>
+    <div class="form-row">
+      <div class="fg">
+        <label>Version / Label</label>
+        <input type="text" name="version" value="{{ pdf.version or '' }}" placeholder="e.g. Updated Nov 2024">
+      </div>
+      <div class="fg">
+        <label>Visible to Students</label>
+        <select name="visible">
+          <option value="true"  {% if pdf.get('visible', True) %}selected{% endif %}>✅ Visible</option>
+          <option value="false" {% if not pdf.get('visible', True) %}selected{% endif %}>🔒 Hidden</option>
+        </select>
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary" style="width:100%;padding:0.78rem;font-size:0.9rem;justify-content:center;">
+      {{ '💾 Update PDF' if action == 'Edit' else '✅ Save PDF' }}
+    </button>
+  </form>
+</div>
+{% endblock %}

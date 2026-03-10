@@ -1,0 +1,122 @@
+{% extends "admin/base.html" %}
+{% block title %}Manage Chapters – Admin{% endblock %}
+{% block content %}
+
+<div class="page-hdr">
+  <div>
+    <div class="page-title">📚 Manage Chapters</div>
+    <div class="page-sub">Arrange chapter order, rename, or delete. Order here = order students see.</div>
+  </div>
+  <div style="display:flex;gap:0.5rem;">
+    {% for code, name in subjects.items() %}
+    <a href="/admin/chapters?subject={{ code }}" class="btn {% if code == subj %}btn-primary{% else %}btn-ghost{% endif %}" style="font-size:0.78rem;padding:0.45rem 0.9rem;">{{ code }}</a>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Add new chapter -->
+<div class="form-card" style="margin-bottom:1.5rem;">
+  <div style="font-weight:700;font-size:0.88rem;margin-bottom:0.85rem;">➕ Add New Chapter to {{ subj }}</div>
+  <form method="POST" action="/admin/chapters/add" style="display:flex;gap:0.75rem;align-items:flex-end;">
+    <input type="hidden" name="subject" value="{{ subj }}">
+    <div class="fg" style="flex:1;margin-bottom:0;">
+      <input type="text" name="name" placeholder="e.g. Chapter 3 – Financial Instruments" required autofocus>
+    </div>
+    <button type="submit" class="btn btn-primary" style="white-space:nowrap;">Add Chapter</button>
+  </form>
+</div>
+
+<!-- Sortable chapter list -->
+<div class="card" style="padding:0;overflow:hidden;">
+  <div style="padding:1rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+    <div style="font-weight:700;font-size:0.88rem;">
+      Chapters for {{ subjects[subj] }} — drag to reorder
+    </div>
+    <div style="font-size:0.75rem;color:var(--muted);">{{ chapters|length }} chapter(s)</div>
+  </div>
+
+  {% if chapters %}
+  <ul id="chapterList" style="list-style:none;margin:0;padding:0.5rem;">
+    {% for c in chapters %}
+    <li class="ch-row" data-id="{{ c.id }}" style="display:flex;align-items:center;gap:0.85rem;padding:0.75rem 0.9rem;border-radius:9px;transition:background 0.15s;cursor:grab;">
+      <!-- drag handle -->
+      <div class="drag-handle" style="color:var(--muted);font-size:1rem;cursor:grab;flex-shrink:0;padding:0 4px;">⠿</div>
+      <!-- order badge -->
+      <div class="order-badge" style="width:28px;height:28px;border-radius:7px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.2);display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;color:var(--accent);flex-shrink:0;">{{ loop.index }}</div>
+      <!-- name (editable inline) -->
+      <div style="flex:1;min-width:0;">
+        <form method="POST" action="/admin/chapters/rename/{{ c.id }}" style="display:flex;gap:0.5rem;align-items:center;">
+          <input type="text" name="name" value="{{ c.name }}" style="flex:1;background:transparent;border:1px solid transparent;padding:0.3rem 0.5rem;border-radius:6px;font-size:0.86rem;font-weight:500;color:var(--text);transition:border-color 0.15s;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='transparent'">
+          <button type="submit" class="btn btn-ghost" style="font-size:0.72rem;padding:0.28rem 0.7rem;white-space:nowrap;">Rename</button>
+        </form>
+        <div style="font-size:0.68rem;color:var(--muted);padding-left:0.5rem;margin-top:2px;">
+          {{ c.lec_count }} lecture{{ 's' if c.lec_count != 1 }}
+        </div>
+      </div>
+      <!-- delete -->
+      <form method="POST" action="/admin/chapters/delete/{{ c.id }}" onsubmit="return confirm('Delete chapter \'{{ c.name }}\'? Lectures will NOT be deleted.');">
+        <button type="submit" class="btn btn-ghost" style="font-size:0.72rem;padding:0.28rem 0.7rem;color:#f87171;border-color:#f87171;white-space:nowrap;">Delete</button>
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+  <!-- Save order button -->
+  <div style="padding:0.85rem 1.25rem;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+    <span style="font-size:0.75rem;color:var(--muted);" id="orderStatus">Drag rows to reorder, then save.</span>
+    <button onclick="saveOrder()" class="btn btn-primary" style="font-size:0.78rem;padding:0.45rem 1rem;">💾 Save Order</button>
+  </div>
+  {% else %}
+  <div style="padding:2.5rem;text-align:center;color:var(--muted);font-size:0.87rem;">
+    No chapters yet for {{ subj }}. Add your first chapter above.
+  </div>
+  {% endif %}
+</div>
+
+<script>
+// ── Drag-to-reorder (no external lib needed) ──
+const list = document.getElementById('chapterList');
+if (list) {
+  let dragging = null;
+
+  list.querySelectorAll('.ch-row').forEach(row => {
+    row.addEventListener('dragstart', e => {
+      dragging = row;
+      row.style.opacity = '0.4';
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    row.addEventListener('dragend', () => {
+      row.style.opacity = '';
+      dragging = null;
+      updateBadges();
+    });
+    row.addEventListener('dragover', e => {
+      e.preventDefault();
+      if (!dragging || dragging === row) return;
+      const rect   = row.getBoundingClientRect();
+      const midY   = rect.top + rect.height / 2;
+      const before = e.clientY < midY;
+      list.insertBefore(dragging, before ? row : row.nextSibling);
+    });
+    row.setAttribute('draggable', 'true');
+  });
+}
+
+function updateBadges() {
+  list.querySelectorAll('.order-badge').forEach((b, i) => b.textContent = i + 1);
+}
+
+function saveOrder() {
+  const ids = [...list.querySelectorAll('.ch-row')].map(r => r.dataset.id);
+  const fd  = new FormData();
+  ids.forEach(id => fd.append('ids[]', id));
+  fd.append('subject', '{{ subj }}');
+  fetch('/admin/chapters/reorder', { method: 'POST', body: fd })
+    .then(r => {
+      if (r.ok) {
+        document.getElementById('orderStatus').textContent = '✅ Order saved!';
+        setTimeout(() => document.getElementById('orderStatus').textContent = 'Drag rows to reorder, then save.', 2500);
+      }
+    });
+}
+</script>
+{% endblock %}

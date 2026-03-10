@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Admin – CAFinalPro{% endblock %}</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0a0f;--surface:#12121a;--card:#1a1a26;--border:#2a2a3d;--accent:#f97316;--text:#f1f1f8;--muted:#8888aa;--gradient:linear-gradient(135deg,#f97316,#ef4444);}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;display:flex;min-height:100vh;}
+a{color:inherit;text-decoration:none;}
+
+.sidebar{width:230px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:50;}
+.sb-top{padding:1.25rem;}
+.sb-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.1rem;}
+.sb-logo span{color:var(--accent);}
+.sb-badge{font-size:0.62rem;color:var(--accent);background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.2);padding:0.12rem 0.5rem;border-radius:4px;font-weight:700;display:inline-block;margin-top:0.3rem;}
+.sb-section{font-size:0.6rem;text-transform:uppercase;letter-spacing:0.1em;color:rgba(136,136,170,0.4);padding:0.75rem 1.25rem 0.25rem;font-weight:700;}
+.sb-link{display:flex;align-items:center;gap:0.6rem;padding:0.55rem 1.25rem;color:var(--muted);font-size:0.82rem;font-weight:500;transition:all 0.15s;border-left:2px solid transparent;}
+.sb-link:hover{color:var(--text);background:rgba(255,255,255,0.03);}
+.sb-link.active{color:var(--accent);background:rgba(249,115,22,0.07);border-left-color:var(--accent);}
+.sb-icon{width:16px;text-align:center;font-size:0.85rem;}
+.sb-bottom{margin-top:auto;padding:1rem 1.25rem;border-top:1px solid var(--border);}
+.sb-user{font-size:0.78rem;color:var(--muted);margin-bottom:0.6rem;}
+.btn-logout{width:100%;background:transparent;border:1px solid var(--border);color:var(--muted);padding:0.42rem;border-radius:7px;cursor:pointer;font-size:0.75rem;font-family:'DM Sans',sans-serif;transition:all 0.2s;}
+.btn-logout:hover{border-color:rgba(239,68,68,0.4);color:#fca5a5;}
+
+.main{margin-left:230px;flex:1;padding:2rem 2.5rem;min-height:100vh;}
+.page-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.75rem;flex-wrap:wrap;gap:0.75rem;}
+.page-title{font-family:'Syne',sans-serif;font-size:1.35rem;font-weight:800;}
+.page-sub{font-size:0.78rem;color:var(--muted);margin-top:0.2rem;}
+
+.btn{display:inline-flex;align-items:center;gap:0.45rem;padding:0.55rem 1.1rem;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:0.82rem;font-weight:600;cursor:pointer;transition:all 0.2s;border:none;text-decoration:none;}
+.btn-primary{background:var(--gradient);color:white;}
+.btn-primary:hover{opacity:0.88;}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text);}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent);}
+.btn-danger{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);color:#fca5a5;}
+.btn-danger:hover{background:rgba(239,68,68,0.2);}
+.btn-sm{padding:0.35rem 0.75rem;font-size:0.75rem;}
+.btn-icon{width:30px;height:30px;padding:0;justify-content:center;border:1px solid var(--border);background:transparent;color:var(--text);border-radius:7px;}
+.btn-icon:hover{border-color:var(--accent);}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;}
+.tbl-wrap{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+table{width:100%;border-collapse:collapse;}
+thead tr{background:var(--surface);}
+th{padding:0.65rem 1rem;font-size:0.65rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);font-weight:700;text-align:left;border-bottom:1px solid var(--border);}
+td{padding:0.75rem 1rem;font-size:0.82rem;border-bottom:1px solid rgba(42,42,61,0.5);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,0.012);}
+.td-main{font-weight:500;}
+.td-sub{font-size:0.7rem;color:var(--muted);margin-top:0.1rem;}
+code{background:var(--surface);padding:0.12rem 0.4rem;border-radius:4px;font-size:0.72rem;color:#fb923c;}
+
+.badge{display:inline-block;font-size:0.67rem;font-weight:700;padding:0.18rem 0.55rem;border-radius:5px;}
+.badge-fr{background:rgba(59,130,246,0.12);color:#93c5fd;}
+.badge-afm{background:rgba(168,85,247,0.12);color:#c4b5fd;}
+.badge-audit{background:rgba(34,197,94,0.12);color:#86efac;}
+.badge-on{background:rgba(34,197,94,0.12);color:#86efac;}
+.badge-off{background:rgba(136,136,170,0.1);color:var(--muted);}
+
+.filter-bar{display:flex;gap:0.6rem;margin-bottom:1.1rem;flex-wrap:wrap;}
+.filter-bar input,.filter-bar select{background:var(--card);border:1px solid var(--border);color:var(--text);padding:0.5rem 0.85rem;border-radius:9px;font-size:0.81rem;font-family:'DM Sans',sans-serif;outline:none;}
+.filter-bar input:focus,.filter-bar select:focus{border-color:var(--accent);}
+.filter-bar input::placeholder{color:rgba(136,136,170,0.4);}
+.search-inp{flex:1;min-width:200px;}
+
+.fg{margin-bottom:0.9rem;}
+.fg label{display:block;font-size:0.72rem;font-weight:700;color:var(--muted);margin-bottom:0.3rem;text-transform:uppercase;letter-spacing:0.05em;}
+.fg input,.fg select,.fg textarea{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:0.65rem 0.9rem;border-radius:10px;font-size:0.85rem;font-family:'DM Sans',sans-serif;outline:none;transition:border-color 0.2s;}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(249,115,22,0.1);}
+.fg input::placeholder,.fg textarea::placeholder{color:rgba(136,136,170,0.35);}
+.fg textarea{resize:vertical;min-height:75px;}
+.fg .hint{font-size:0.7rem;color:var(--muted);margin-top:0.28rem;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.form-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.75rem;max-width:640px;}
+
+.alert{padding:0.7rem 1rem;border-radius:9px;font-size:0.83rem;margin-bottom:1rem;}
+.alert-error{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#fca5a5;}
+.alert-success{background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);color:#86efac;}
+.alert-info{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);color:#93c5fd;}
+
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem;}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.1rem 1.25rem;position:relative;overflow:hidden;}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--gradient);}
+.stat-val{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;}
+.stat-lbl{font-size:0.73rem;color:var(--muted);margin-top:0.15rem;}
+
+.empty-row td{text-align:center;padding:2rem;color:var(--muted);}
+
+.switch{position:relative;display:inline-block;width:42px;height:23px;}
+.switch input{opacity:0;width:0;height:0;}
+.slider{position:absolute;cursor:pointer;inset:0;background:var(--border);border-radius:23px;transition:.3s;}
+.slider:before{position:absolute;content:"";height:17px;width:17px;left:3px;bottom:3px;background:white;border-radius:50%;transition:.3s;}
+input:checked+.slider{background:var(--accent);}
+input:checked+.slider:before{transform:translateX(19px);}
+
+@media(max-width:900px){.sidebar{display:none;}.main{margin-left:0;padding:1rem;}.stat-grid{grid-template-columns:1fr 1fr;}.form-row{grid-template-columns:1fr;}}
+</style>
+{% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sb-top">
+    <div class="sb-logo">CA<span>Final</span>Pro</div>
+    <div class="sb-badge">⚙️ Admin Panel</div>
+  </div>
+
+  <span class="sb-section">Overview</span>
+  <a href="/admin" class="sb-link {% if request.path == '/admin' %}active{% endif %}"><span class="sb-icon">📊</span> Dashboard</a>
+
+  <span class="sb-section">Content</span>
+  <a href="/admin/lectures" class="sb-link {% if '/admin/lectures' in request.path %}active{% endif %}"><span class="sb-icon">🎬</span> Lectures</a>
+  <a href="/admin/chapters" class="sb-link {% if '/admin/chapters' in request.path %}active{% endif %}"><span class="sb-icon">📚</span> Chapters</a>
+  <a href="/admin/pdfs" class="sb-link {% if '/admin/pdfs' in request.path %}active{% endif %}"><span class="sb-icon">📄</span> PDF Notes</a>
+  <a href="/admin/announcements" class="sb-link {% if '/admin/announcements' in request.path %}active{% endif %}"><span class="sb-icon">📢</span> Announcements</a>
+
+  <span class="sb-section">Students</span>
+  <a href="/admin/users" class="sb-link {% if '/admin/users' in request.path and 'ip' not in request.path %}active{% endif %}"><span class="sb-icon">👥</span> All Students</a>
+  <a href="/admin/ip_logs" class="sb-link {% if '/admin/ip_logs' in request.path %}active{% endif %}">
+    <span class="sb-icon">🚨</span> IP Logs
+  </a>
+
+  <span class="sb-section">Config</span>
+  <a href="/admin/settings" class="sb-link {% if '/admin/settings' in request.path %}active{% endif %}"><span class="sb-icon">⚙️</span> Settings</a>
+
+  <div style="height:1px;background:var(--border);margin:0.5rem 1.25rem;"></div>
+  <a href="/" target="_blank" class="sb-link"><span class="sb-icon">🔗</span> View Website</a>
+  <a href="/dashboard" target="_blank" class="sb-link"><span class="sb-icon">👤</span> Student View</a>
+
+  <div class="sb-bottom">
+    <div class="sb-user">Logged in as <strong>Admin</strong></div>
+    <a href="/admin/logout"><button class="btn-logout">Sign Out</button></a>
+  </div>
+</aside>
+
+<main class="main">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ 'success' if category == 'success' else 'info' }}">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

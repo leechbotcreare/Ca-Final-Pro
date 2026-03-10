@@ -1,0 +1,64 @@
+{% extends "admin/base.html" %}
+{% block title %}Lectures – Admin{% endblock %}
+{% block content %}
+<div class="page-hdr">
+  <div><div class="page-title">Lectures</div><div class="page-sub">{{ lectures|length }} lecture(s) shown</div></div>
+  <a href="/admin/lectures/add" class="btn btn-primary">➕ Add Lecture</a>
+</div>
+
+<form method="GET" class="filter-bar">
+  <input class="search-inp" type="text" name="search" placeholder="🔍 Search title or chapter..." value="{{ search }}">
+  <select name="subject" onchange="this.form.submit()">
+    <option value="">All Subjects</option>
+    <option value="FR" {% if subj_filter=='FR' %}selected{% endif %}>Financial Reporting (FR)</option>
+    <option value="AFM" {% if subj_filter=='AFM' %}selected{% endif %}>Adv. Financial Mgmt (AFM)</option>
+    <option value="AUDIT" {% if subj_filter=='AUDIT' %}selected{% endif %}>Adv. Auditing & Ethics</option>
+  </select>
+  <button type="submit" class="btn btn-ghost btn-sm">Filter</button>
+  <a href="/admin/lectures" class="btn btn-ghost btn-sm">Clear</a>
+</form>
+
+<div class="tbl-wrap">
+  <table>
+    <thead>
+      <tr><th>#</th><th>Title</th><th>Subject</th><th>Chapter</th><th>Duration</th><th>Video ID</th><th>Status</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+      {% for l in lectures %}
+      <tr>
+        <td style="color:var(--muted);font-size:0.72rem;">{{ loop.index }}</td>
+        <td>
+          <div class="td-main">{{ l.title }}</div>
+          <div class="td-sub">{{ l.description[:60] + '...' if l.description and l.description|length > 60 else l.description }}</div>
+        </td>
+        <td><span class="badge badge-{{ l.subject|lower }}">{{ l.subject }}</span></td>
+        <td style="font-size:0.78rem;color:var(--muted);max-width:160px;">{{ l.chapter }}</td>
+        <td style="font-size:0.78rem;">{{ l.duration or '–' }}</td>
+        <td>
+          <code title="{{ l.video_id }}">{{ l.video_id[:14] }}…</code>
+          <button onclick="navigator.clipboard.writeText('{{ l.video_id }}');this.textContent='✅'" style="background:none;border:none;cursor:pointer;font-size:0.7rem;color:var(--muted);margin-left:4px;" title="Copy">📋</button>
+        </td>
+        <td>
+          <form method="POST" action="/admin/lectures/toggle/{{ l.id }}" style="display:inline;">
+            <button type="submit" class="badge {{ 'badge-on' if l.visible else 'badge-off' }}" style="cursor:pointer;border:none;background:inherit;" title="Click to toggle">
+              {{ '✅ Visible' if l.visible else '🔒 Hidden' }}
+            </button>
+          </form>
+        </td>
+        <td>
+          <div style="display:flex;gap:0.35rem;">
+            <a href="/watch/{{ l.video_id }}" target="_blank" class="btn btn-icon btn-sm" title="Preview">▶️</a>
+            <a href="/admin/lectures/edit/{{ l.id }}" class="btn btn-icon btn-sm" title="Edit">✏️</a>
+            <form method="POST" action="/admin/lectures/delete/{{ l.id }}" onsubmit="return confirm('Delete this lecture?')">
+              <button type="submit" class="btn btn-icon btn-sm btn-danger" title="Delete">🗑️</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% else %}
+      <tr class="empty-row"><td colspan="8">No lectures yet. <a href="/admin/lectures/add" style="color:var(--accent);">Add your first lecture →</a></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,898 @@
+{% extends "base.html" %}
+{% block title %}{{ lecture.title }}{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ─────────────────────────────────────────────────────
+   NETFLIX-GRADE CINEMA PLAYER
+   Pure black • Thin glowing progress • Icons only
+───────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#0d0d0d;
+  --card:#181818;
+  --border:#2a2a2a;
+  --red:#e50914;
+  --text:#fff;
+  --muted:#aaa;
+  --sub:#555;
+}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;overflow-x:hidden;}
+a{color:inherit;text-decoration:none;}
+button{font-family:inherit;border:none;background:transparent;cursor:pointer;color:inherit;}
+
+/* ── TOP BAR ── */
+.topbar{
+  position:fixed;top:0;left:0;right:0;z-index:300;
+  height:60px;padding:0 28px;
+  display:flex;align-items:center;gap:14px;
+  background:linear-gradient(180deg,rgba(0,0,0,.85)0%,transparent 100%);
+  transition:background .3s;
+}
+.topbar.bg{background:rgba(13,13,13,.97);border-bottom:1px solid var(--border);}
+.tb-back{
+  width:34px;height:34px;border-radius:50%;
+  background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;
+  transition:background .2s;flex-shrink:0;
+}
+.tb-back:hover{background:rgba(255,255,255,.16);}
+.tb-back svg{width:18px;height:18px;fill:white;}
+.tb-logo{font-weight:800;font-size:1.15rem;letter-spacing:-0.5px;color:var(--red);flex-shrink:0;}
+.tb-sep{width:1px;height:18px;background:rgba(255,255,255,.15);}
+.tb-title{font-size:.78rem;color:rgba(255,255,255,.55);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;}
+.tb-chip{
+  font-size:.65rem;font-weight:600;color:rgba(255,255,255,.4);
+  background:rgba(255,255,255,.06);border:1px solid var(--border);
+  padding:.25rem .65rem;border-radius:4px;white-space:nowrap;flex-shrink:0;
+}
+
+/* ── PAGE LAYOUT ── */
+.page{padding-top:60px;display:grid;grid-template-columns:1fr 320px;min-height:100vh;}
+.left{display:flex;flex-direction:column;}
+.right{border-left:1px solid var(--border);height:calc(100vh - 60px);position:sticky;top:60px;display:flex;flex-direction:column;overflow:hidden;}
+
+/* ═══════════════════════════════════════
+   THE CINEMA PLAYER
+═══════════════════════════════════════ */
+.cinema{
+  position:relative;
+  width:100%;
+  aspect-ratio:16/9;
+  background:#000;
+  overflow:hidden;
+  cursor:none;
+  user-select:none;
+  -webkit-user-select:none;
+}
+
+/* iframe — offset to crop YouTube chrome */
+#vf{
+  position:absolute;
+  top:-62px;left:-3px;
+  width:calc(100% + 6px);
+  height:calc(100% + 138px);
+  border:none;
+  pointer-events:none; /* blocks YouTube UI clicks */
+  display:none;
+}
+
+/* invisible click-catcher */
+.glass{position:absolute;inset:0;z-index:8;}
+
+/* top & bottom gradients — Netflix style */
+.grad-top{
+  position:absolute;top:0;left:0;right:0;height:140px;z-index:9;pointer-events:none;
+  background:linear-gradient(180deg,rgba(0,0,0,.72)0%,transparent 100%);
+}
+.grad-bot{
+  position:absolute;bottom:0;left:0;right:0;height:200px;z-index:9;pointer-events:none;
+  background:linear-gradient(0deg,rgba(0,0,0,.95)0%,rgba(0,0,0,.4)50%,transparent 100%);
+}
+
+/* watermark */
+.wm{
+  position:absolute;top:14px;right:16px;z-index:11;pointer-events:none;
+  font-size:.52rem;color:rgba(255,255,255,.07);font-family:monospace;letter-spacing:.04em;
+}
+
+/* ── LOADER ── */
+.loader{
+  position:absolute;inset:0;z-index:60;background:#000;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;
+  transition:opacity .6s;
+}
+.loader.gone{opacity:0;pointer-events:none;}
+.loader-wordmark{font-size:1.6rem;font-weight:800;letter-spacing:-1px;color:var(--red);}
+.loader-track{width:180px;height:2px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden;}
+.loader-fill{height:100%;background:var(--red);animation:ldFill 1.6s ease-in-out infinite;}
+@keyframes ldFill{0%{width:0;margin-left:0}55%{width:65%;margin-left:20%}100%{width:0;margin-left:100%}}
+
+/* ── DOUBLE TAP RIPPLE (mobile) ── */
+.dtr{
+  position:absolute;top:0;bottom:80px;z-index:20;width:33%;
+  display:flex;align-items:center;justify-content:center;
+}
+.dtr.l{left:0;} .dtr.r{right:0;}
+.dtr-ring{
+  width:88px;height:88px;border-radius:50%;
+  background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.2);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  opacity:0;transform:scale(.6);transition:opacity .12s,transform .12s;pointer-events:none;
+}
+.dtr-ring.pop{opacity:1;transform:scale(1);}
+.dtr-ring svg{width:26px;height:26px;fill:white;}
+.dtr-ring span{font-size:.62rem;font-weight:600;color:rgba(255,255,255,.85);}
+
+/* ── CENTRE FLASH ── */
+.cflash{
+  position:absolute;inset:0;z-index:25;
+  display:flex;align-items:center;justify-content:center;pointer-events:none;
+}
+.cf-circle{
+  width:72px;height:72px;border-radius:50%;
+  background:rgba(0,0,0,.6);
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;transform:scale(.5);
+}
+.cf-circle.pop{animation:cfPop .45s cubic-bezier(.18,.8,.3,1) forwards;}
+.cf-circle svg{width:32px;height:32px;fill:white;}
+@keyframes cfPop{0%{opacity:.9;transform:scale(.6)}45%{opacity:1;transform:scale(1.1)}100%{opacity:0;transform:scale(1.3)}}
+
+/* ── CURSOR DOT ── */
+.dot{
+  position:absolute;z-index:30;pointer-events:none;
+  width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.6);
+  transform:translate(-50%,-50%);transition:opacity .3s;display:none;
+}
+
+/* ── TOAST ── */
+.toast{
+  position:absolute;top:72px;left:50%;transform:translateX(-50%);
+  z-index:50;background:rgba(0,0,0,.85);backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,.1);border-radius:9px;
+  padding:.5rem 1rem;font-size:.75rem;font-weight:500;color:white;
+  white-space:nowrap;opacity:0;transition:opacity .2s;pointer-events:none;
+  display:flex;align-items:center;gap:0.25rem;
+}
+.toast.on{opacity:1;pointer-events:auto;}
+
+/* ══════════════════════════════════════
+   CONTROLS  —  the heart of the player
+   Fades in on hover / interaction
+══════════════════════════════════════ */
+.ctrl{
+  position:absolute;bottom:0;left:0;right:0;z-index:40;
+  padding:0 20px 16px;
+  opacity:0;transition:opacity .25s;
+}
+.cinema.show .ctrl{opacity:1;}
+
+/* thin progress bar */
+.prog{
+  margin-bottom:10px;
+  height:4px;border-radius:4px;
+  background:rgba(255,255,255,.2);
+  position:relative;cursor:pointer;
+  transition:height .15s;
+}
+.prog:hover{height:6px;}
+.prog-buf{position:absolute;left:0;top:0;height:100%;background:rgba(255,255,255,.22);border-radius:4px;pointer-events:none;}
+.prog-fill{position:absolute;left:0;top:0;height:100%;background:var(--red);border-radius:4px;pointer-events:none;width:0%;transition:width .3s linear;}
+.prog-thumb{
+  position:absolute;top:50%;width:14px;height:14px;border-radius:50%;
+  background:#fff;transform:translate(-50%,-50%) scale(0);
+  transition:transform .15s;pointer-events:none;
+  box-shadow:0 0 8px rgba(229,9,20,.7);
+}
+.prog:hover .prog-thumb{transform:translate(-50%,-50%) scale(1);}
+
+/* button row */
+.brow{display:flex;align-items:center;gap:4px;}
+.ic{
+  width:40px;height:40px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  color:rgba(255,255,255,.82);transition:background .15s,color .15s,transform .1s;
+  flex-shrink:0;
+}
+.ic:hover{background:rgba(255,255,255,.1);color:#fff;transform:scale(1.06);}
+.ic:active{transform:scale(.93);}
+.ic svg{width:22px;height:22px;fill:currentColor;}
+
+/* big play button */
+.ic-play{
+  width:48px;height:48px;
+  color:#fff;
+}
+.ic-play svg{width:28px;height:28px;}
+
+/* spacer */
+.sp{flex:1;}
+
+/* time text */
+.time-txt{
+  font-size:.71rem;color:rgba(255,255,255,.6);white-space:nowrap;
+  font-variant-numeric:tabular-nums;padding:0 4px;
+}
+
+/* volume group */
+.vol-grp{display:flex;align-items:center;gap:4px;}
+.vol-sl{
+  width:72px;height:3px;-webkit-appearance:none;appearance:none;
+  background:rgba(255,255,255,.25);border-radius:3px;outline:none;cursor:pointer;
+}
+.vol-sl::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.5);}
+
+/* speed pill */
+.spd{
+  font-size:.68rem;font-weight:600;color:rgba(255,255,255,.6);
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
+  padding:.22rem .6rem;border-radius:5px;transition:all .15s;
+}
+.spd:hover{background:rgba(229,9,20,.2);color:#fff;border-color:rgba(229,9,20,.4);}
+
+/* ═══════════════════════════
+   LECTURE INFO (below player)
+═══════════════════════════ */
+.info{padding:22px 28px 28px;}
+.info-tags{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+.tag{
+  font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  padding:.22rem .65rem;border-radius:4px;
+}
+.tag-red{background:var(--red);color:#fff;}
+.tag-grey{background:rgba(255,255,255,.07);border:1px solid var(--border);color:var(--muted);}
+.info-title{font-size:1.2rem;font-weight:700;line-height:1.35;margin-bottom:10px;letter-spacing:-.2px;}
+.info-desc{font-size:.83rem;color:var(--muted);line-height:1.7;margin-bottom:18px;}
+.nav-row{display:flex;gap:8px;flex-wrap:wrap;}
+.nb{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:.55rem 1.15rem;border-radius:6px;font-size:.8rem;font-weight:600;
+  transition:all .2s;
+}
+.nb-w{background:#fff;color:#000;}  .nb-w:hover{background:#ddd;}
+.nb-d{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.1);}
+.nb-d:hover{background:rgba(255,255,255,.18);}
+.nb.off{opacity:.28;pointer-events:none;}
+
+/* shortcuts panel */
+.kpanel{
+  margin-top:18px;background:var(--card);border:1px solid var(--border);
+  border-radius:10px;padding:14px 18px;
+}
+.kpanel-ttl{font-size:.65rem;text-transform:uppercase;letter-spacing:.1em;color:var(--sub);font-weight:700;margin-bottom:12px;}
+.kgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px 20px;}
+.krow{display:flex;align-items:center;justify-content:space-between;gap:6px;}
+.klbl{font-size:.72rem;color:var(--muted);}
+.kkey{font-size:.6rem;background:rgba(255,255,255,.06);border:1px solid var(--border);padding:.12rem .45rem;border-radius:4px;color:var(--sub);font-family:monospace;}
+
+/* ═══════════════════════
+   PLAYLIST (right column)
+═══════════════════════ */
+.pl-head{padding:14px 18px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.pl-tag{font-size:.6rem;color:var(--red);font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;}
+.pl-title{font-size:.88rem;font-weight:700;margin-bottom:3px;}
+.pl-stat{font-size:.68rem;color:var(--sub);}
+.pl-prog{height:2px;background:var(--border);border-radius:2px;margin-top:10px;}
+.pl-prog-fill{height:100%;background:var(--red);border-radius:2px;}
+.pl-srch{padding:10px 14px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.pl-srch input{
+  width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);
+  color:#fff;padding:.42rem .7rem;border-radius:7px;font-size:.76rem;outline:none;
+  transition:border-color .2s;font-family:inherit;
+}
+.pl-srch input:focus{border-color:rgba(229,9,20,.5);}
+.pl-srch input::placeholder{color:rgba(255,255,255,.18);}
+.pl-list{flex:1;overflow-y:auto;}
+.pl-list::-webkit-scrollbar{width:3px;}
+.pl-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.ch-sep{font-size:.58rem;text-transform:uppercase;letter-spacing:.12em;color:rgba(255,255,255,.15);padding:10px 18px 4px;font-weight:700;position:sticky;top:0;background:var(--bg);z-index:1;}
+.pi{
+  display:flex;align-items:center;gap:12px;padding:10px 18px;
+  text-decoration:none;color:#fff;transition:background .15s;
+  border-left:2px solid transparent;
+}
+.pi:hover{background:rgba(255,255,255,.04);}
+.pi.now{background:rgba(229,9,20,.07);border-left-color:var(--red);}
+.pi-num{
+  width:28px;height:28px;border-radius:5px;flex-shrink:0;
+  background:rgba(255,255,255,.05);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:.68rem;color:var(--sub);font-variant-numeric:tabular-nums;
+}
+.pi.now .pi-num{background:rgba(229,9,20,.15);border-color:rgba(229,9,20,.3);color:var(--red);}
+.pi-info{flex:1;min-width:0;}
+.pi-t{font-size:.78rem;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.35;}
+.pi-d{font-size:.66rem;color:var(--sub);margin-top:2px;}
+
+/* ── DevTools shield ── */
+#shield{
+  display:none;position:fixed;inset:0;z-index:9999;background:#000;
+  flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;
+}
+#shield.on{display:flex;}
+
+/* ── Responsive ── */
+@media(max-width:960px){
+  .page{grid-template-columns:1fr;}
+  .right{height:auto;position:static;border-left:none;border-top:1px solid var(--border);max-height:450px;}
+  .kgrid{grid-template-columns:1fr;}
+}
+@media(max-width:600px){
+  .vol-grp,.spd{display:none;}
+  .ic{width:36px;height:36px;}
+  .info{padding:14px 16px 20px;}
+  .topbar{padding:0 16px;}
+}
+</style>
+{% endblock %}
+
+{% block body %}
+
+<!-- Shield -->
+<div id="shield">
+  <svg width="40" height="40" viewBox="0 0 24 24" fill="var(--red)"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+  <div style="font-size:1rem;font-weight:700;margin-top:4px;">Content Protected</div>
+  <div style="font-size:.8rem;color:var(--muted);">Close DevTools to continue watching.</div>
+</div>
+
+<!-- Top bar -->
+<header class="topbar" id="topbar">
+  <a href="/subject/{{ lecture.subject }}">
+    <button class="tb-back">
+      <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+    </button>
+  </a>
+  <span class="tb-logo">CAFinalPro</span>
+  <span class="tb-sep"></span>
+  <span class="tb-title">{{ lecture.title }}</span>
+  {% if lecture.subject %}<span class="tb-chip">{{ lecture.subject }}</span>{% endif %}
+</header>
+
+<!-- Page grid -->
+<div class="page">
+
+  <!-- ═══ LEFT ═══ -->
+  <div class="left">
+
+    <!-- Cinema -->
+    <div class="cinema" id="cinema">
+
+      <!-- Loader -->
+      <div class="loader" id="loader">
+        <div class="loader-wordmark">CAFinalPro</div>
+        <div class="loader-track"><div class="loader-fill"></div></div>
+      </div>
+
+      <!-- YT Player mounts here — video ID never in HTML source -->
+      <div id="ytContainer" style="position:absolute;top:-62px;left:-3px;width:calc(100% + 6px);height:calc(100% + 138px);pointer-events:none;"></div>
+
+      <!-- click blocker -->
+      <div class="glass" id="glass"></div>
+
+      <!-- gradients -->
+      <div class="grad-top"></div>
+      <div class="grad-bot"></div>
+
+      <!-- watermark -->
+      <div class="wm">{{ session.get('student_email','') }}</div>
+
+      <!-- double-tap zones -->
+      <div class="dtr l" id="dtrL">
+        <div class="dtr-ring" id="dtrRingL">
+          <svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
+          <span>10 sec</span>
+        </div>
+      </div>
+      <div class="dtr r" id="dtrR">
+        <div class="dtr-ring" id="dtrRingR">
+          <svg viewBox="0 0 24 24"><path d="M12 5V1l5 5-5 5V7c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6h2c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8z"/></svg>
+          <span>10 sec</span>
+        </div>
+      </div>
+
+      <!-- centre flash -->
+      <div class="cflash">
+        <div class="cf-circle" id="cf">
+          <svg id="cf-svg" viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
+        </div>
+      </div>
+
+      <!-- cursor dot -->
+      <div class="dot" id="dot"></div>
+
+      <!-- toast -->
+      <div class="toast" id="toast"></div>
+
+      <!-- CONTROLS -->
+      <div class="ctrl" id="ctrl">
+
+        <!-- Progress bar -->
+        <div class="prog" id="prog">
+          <div class="prog-buf"   id="pbuf"></div>
+          <div class="prog-fill"  id="pfill" style="width:0%"></div>
+          <div class="prog-thumb" id="pthumb" style="left:0%"></div>
+        </div>
+
+        <!-- Button row -->
+        <div class="brow">
+
+          <!-- Play/Pause -->
+          <button class="ic ic-play" id="btnPlay" aria-label="Play/Pause">
+            <svg id="svgPlay" viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
+          </button>
+
+          <!-- Prev / Next -->
+          <button class="ic" onclick="goPrev()" aria-label="Previous">
+            <svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg>
+          </button>
+          <button class="ic" onclick="goNext()" aria-label="Next">
+            <svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+          </button>
+
+          <!-- Rewind 10 -->
+          <button class="ic" onclick="seekBy(-10)" aria-label="-10s">
+            <svg viewBox="0 0 24 24">
+              <path d="M12.5 3a9 9 0 1 0 9 9h-2a7 7 0 1 1-7-7V3z"/>
+              <path d="M12.5 3V1l-4 3 4 3V5a7 7 0 0 1 0 14v2a9 9 0 0 0 0-18z" opacity=".4"/>
+              <text x="12" y="14" text-anchor="middle" font-size="6" fill="white" font-family="Inter,sans-serif" font-weight="700">10</text>
+            </svg>
+          </button>
+
+          <!-- Forward 10 -->
+          <button class="ic" onclick="seekBy(10)" aria-label="+10s">
+            <svg viewBox="0 0 24 24">
+              <path d="M11.5 3a9 9 0 1 1-9 9h2a7 7 0 1 0 7-7V3z"/>
+              <path d="M11.5 3V1l4 3-4 3V5a7 7 0 0 0 0 14v2a9 9 0 0 1 0-18z" opacity=".4"/>
+              <text x="12" y="14" text-anchor="middle" font-size="6" fill="white" font-family="Inter,sans-serif" font-weight="700">10</text>
+            </svg>
+          </button>
+
+          <!-- Volume -->
+          <div class="vol-grp">
+            <button class="ic" id="btnMute" onclick="toggleMute()" aria-label="Mute">
+              <svg id="svgVol" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+            </button>
+            <input class="vol-sl" id="volSl" type="range" min="0" max="100" value="100" oninput="setVol(this.value)" aria-label="Volume">
+          </div>
+
+          <!-- Time -->
+          <span class="time-txt" id="timeTxt">0:00 / --:--</span>
+
+          <div class="sp"></div>
+
+          <!-- Speed -->
+          <button class="spd" id="spdBtn" onclick="cycleSpd()">1×</button>
+
+          <!-- PiP -->
+          <button class="ic" onclick="doPiP()" aria-label="Picture in picture">
+            <svg viewBox="0 0 24 24"><path d="M19 7h-8v6h8V7zm2-4H3c-1.1 0-2 .9-2 2v14c0 1.1.9 1.98 2 1.98h18c1.1 0 2-.88 2-1.98V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14z"/></svg>
+          </button>
+
+          <!-- Fullscreen -->
+          <button class="ic" id="btnFs" onclick="doFs()" aria-label="Fullscreen">
+            <svg id="svgFs" viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+          </button>
+
+        </div>
+      </div>
+      <!-- end ctrl -->
+
+    </div>
+    <!-- end cinema -->
+
+    <!-- Info -->
+    <div class="info">
+      <div class="info-tags">
+        <span class="tag tag-red">CA Final</span>
+        <span class="tag tag-grey">{{ lecture.subject }}</span>
+        {% if lecture.duration %}<span class="tag tag-grey">⏱ {{ lecture.duration }}</span>{% endif %}
+        {% if lecture.chapter  %}<span class="tag tag-grey">{{ lecture.chapter }}</span>{% endif %}
+      </div>
+      <div class="info-title">{{ lecture.title }}</div>
+      {% if lecture.description %}
+      <div class="info-desc">{{ lecture.description }}</div>
+      {% endif %}
+      <div class="nav-row">
+        {% if prev_lec %}
+          <a href="/watch/{{ prev_lec.id }}" class="nb nb-d">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z"/></svg>
+            Previous
+          </a>
+        {% else %}
+          <span class="nb nb-d off">← Previous</span>
+        {% endif %}
+        {% if next_lec %}
+          <a href="/watch/{{ next_lec.id }}" class="nb nb-w">
+            Next
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
+          </a>
+        {% else %}
+          <span class="nb nb-d off">Next →</span>
+        {% endif %}
+        <a href="/subject/{{ lecture.subject }}" class="nb nb-d">📚 All Lectures</a>
+      </div>
+
+      <!-- Keyboard shortcuts -->
+      <div class="kpanel">
+        <div class="kpanel-ttl">⌨ Keyboard Shortcuts</div>
+        <div class="kgrid">
+          <div class="krow"><span class="klbl">Play / Pause</span><kbd class="kkey">Space / K</kbd></div>
+          <div class="krow"><span class="klbl">Fullscreen</span><kbd class="kkey">F</kbd></div>
+          <div class="krow"><span class="klbl">Back 10s</span><kbd class="kkey">← / J</kbd></div>
+          <div class="krow"><span class="klbl">Forward 10s</span><kbd class="kkey">→ / L</kbd></div>
+          <div class="krow"><span class="klbl">Volume Up</span><kbd class="kkey">↑</kbd></div>
+          <div class="krow"><span class="klbl">Volume Down</span><kbd class="kkey">↓</kbd></div>
+          <div class="krow"><span class="klbl">Mute</span><kbd class="kkey">M</kbd></div>
+          <div class="krow"><span class="klbl">Speed</span><kbd class="kkey">Shift + . / ,</kbd></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end left -->
+
+  <!-- ═══ RIGHT: PLAYLIST ═══ -->
+  <div class="right">
+    <div class="pl-head">
+      <div class="pl-tag">▶ Now Playing</div>
+      <div class="pl-title">{{ subject_name }}</div>
+      <div class="pl-stat">{{ all_lecs|length }} lectures · {{ curr_idx+1 }} / {{ all_lecs|length }}</div>
+      <div class="pl-prog">
+        <div class="pl-prog-fill" style="width:{{ ((curr_idx+1)/all_lecs|length*100)|round|int if all_lecs|length else 0 }}%"></div>
+      </div>
+    </div>
+    <div class="pl-srch">
+      <input type="text" placeholder="Search lectures..." id="plSrch" oninput="filterPl(this.value)">
+    </div>
+    <div class="pl-list" id="plList">
+      {% set ch = namespace(name='') %}
+      {% for l in all_lecs %}
+        {% if l.chapter != ch.name %}
+          {% set ch.name = l.chapter %}
+          <div class="ch-sep" data-ch="{{ l.chapter|lower }}">{{ l.chapter }}</div>
+        {% endif %}
+        <a href="/watch/{{ l.id }}" class="pi {{ 'now' if l.id == lecture.id }}" data-title="{{ l.title|lower }}">
+          <div class="pi-num">{{ '▶' if l.id == lecture.id else loop.index }}</div>
+          <div class="pi-info">
+            <div class="pi-t">{{ l.title }}</div>
+            {% if l.duration %}<div class="pi-d">⏱ {{ l.duration }}</div>{% endif %}
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+
+</div><!-- end page -->
+{% endblock %}
+
+{% block scripts %}
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+// ══════════ CONSTANTS ══════════
+const LID = '{{ lecture.id }}';
+const TOK = '{{ stream_token }}';
+{% if prev_lec %}const PREV='/watch/{{ prev_lec.id }}';{% else %}const PREV=null;{% endif %}
+{% if next_lec %}const NEXT='/watch/{{ next_lec.id }}';{% else %}const NEXT=null;{% endif %}
+
+// ══════════ STATE ══════════
+let YTP = null;
+let _pl=false, _mu=false, _vol=100, _dur=0, _cur=0, _drag=false;
+let _speeds=[0.5,0.75,1,1.25,1.5,1.75,2], _si=2;
+let _ctrlT=null, _toastT=null, _tickT=null;
+
+// ══════════ SECURITY ══════════
+document.addEventListener('contextmenu', e=>e.preventDefault());
+document.addEventListener('keydown', e=>{
+  if(e.key==='F12'){e.preventDefault();dtShield(true);return;}
+  if(e.ctrlKey&&e.shiftKey&&'IJCijc'.includes(e.key)){e.preventDefault();dtShield(true);return;}
+  if(e.ctrlKey&&'UuSs'.includes(e.key))e.preventDefault();
+},true);
+let _dtOpen=false;
+setInterval(()=>{
+  const open=(window.outerWidth-window.innerWidth>150)||(window.outerHeight-window.innerHeight>150);
+  if(open!==_dtOpen){_dtOpen=open;dtShield(open);}
+},900);
+function dtShield(on){
+  document.getElementById('shield').classList.toggle('on',on);
+  if(on&&YTP)try{YTP.pauseVideo();}catch(e){}
+}
+
+// ══════════ LOAD VIDEO ID SECURELY FROM BACKEND ══════════
+async function loadVideo(){
+  try{
+    const res=await fetch('/stream/'+LID+'?t='+TOK);
+    if(!res.ok){showErr('Session expired. Please refresh.');return;}
+    const {url}=await res.json();
+    const m=url.match(/embed\/([^?&]+)/);
+    if(!m){showErr('Invalid video.');return;}
+    buildPlayer(m[1]);
+  }catch(e){showErr('Could not load. Please refresh.');}
+}
+
+// ══════════ BUILD YT PLAYER (full API) ══════════
+function buildPlayer(videoId){
+  YTP=new YT.Player('ytContainer',{
+    videoId:videoId,
+    width:'100%',
+    height:'100%',
+    playerVars:{
+      autoplay:1, rel:0, modestbranding:1, iv_load_policy:3,
+      showinfo:0, playsinline:1, enablejsapi:1,
+      controls:0, disablekb:1, fs:0, cc_load_policy:0,
+    },
+    events:{onReady:onReady, onStateChange:onState}
+  });
+}
+
+// ══════════ PLAYER READY ══════════
+function onReady(){
+  document.getElementById('loader').classList.add('gone');
+  _dur=YTP.getDuration()||0;
+  _vol=YTP.getVolume()||100;
+  document.getElementById('volSl').value=_vol;
+  renderBar();
+  clearInterval(_tickT);
+  _tickT=setInterval(tick,250);
+  loadAndResume();
+  setInterval(saveProgress,10000);
+}
+
+// ══════ RESUME WATCHING ══════
+async function loadAndResume(){
+  try{
+    const r=await fetch('/api/progress/get/'+LID);
+    const d=await r.json();
+    if(d.position>10 && d.position<(d.duration*0.95||99999)){
+      showResumePrompt(d.position);
+    }
+  }catch(e){}
+}
+function showResumePrompt(pos){
+  const t=document.getElementById('toast');
+  t.innerHTML='Resume from '+fmt(pos)+'?'
+    +' <button onclick="doResume('+pos+')" style="background:var(--red);color:#fff;border:none;padding:0.18rem 0.5rem;border-radius:4px;cursor:pointer;font-size:0.7rem;margin-left:6px;">Resume</button>'
+    +' <button onclick="document.getElementById(\'toast\').classList.remove(\'on\')" style="background:rgba(255,255,255,0.12);color:#fff;border:none;padding:0.18rem 0.5rem;border-radius:4px;cursor:pointer;font-size:0.7rem;margin-left:4px;">Start over</button>';
+  t.classList.add('on');
+}
+function doResume(pos){
+  if(YTP)YTP.seekTo(pos,true);
+  _cur=pos; renderBar();
+  document.getElementById('toast').classList.remove('on');
+}
+async function saveProgress(){
+  if(!YTP||typeof YTP.getCurrentTime!=='function')return;
+  try{
+    const pos=YTP.getCurrentTime()||0;
+    const dur=YTP.getDuration()||0;
+    if(pos<2)return;
+    await fetch('/api/progress/save',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({lecture_id:LID,position:pos,duration:dur})
+    });
+  }catch(e){}
+}
+
+function onState(e){
+  const s=e.data;
+  if(s===YT.PlayerState.PLAYING){
+    _pl=true; setPlayIcon(true);
+    const d=YTP.getDuration(); if(d>0)_dur=d;
+  }
+  if(s===YT.PlayerState.PAUSED||s===YT.PlayerState.ENDED){
+    _pl=false; setPlayIcon(false);
+    saveProgress();
+  }
+}
+
+// ══════════ TICK every 250ms ══════════
+function tick(){
+  if(!YTP||typeof YTP.getCurrentTime!=='function')return;
+  try{
+    _cur=YTP.getCurrentTime()||0;
+    const d=YTP.getDuration()||0;
+    if(d>0)_dur=d;
+    renderBar();
+  }catch(e){}
+}
+
+// ══════════ RENDER PROGRESS BAR & TIME ══════════
+function renderBar(){
+  const pct=_dur>0?(_cur/_dur*100):0;
+  const ps=pct.toFixed(3)+'%';
+  document.getElementById('pfill').style.width=ps;
+  document.getElementById('pthumb').style.left=ps;
+  document.getElementById('timeTxt').textContent=fmt(_cur)+' / '+(_dur>0?fmt(_dur):'--:--');
+}
+
+function fmt(secs){
+  secs=Math.max(0,Math.floor(secs));
+  const h=Math.floor(secs/3600);
+  const m=Math.floor((secs%3600)/60);
+  const s=secs%60;
+  if(h>0)return h+':'+pad(m)+':'+pad(s);
+  return m+':'+pad(s);
+}
+function pad(n){return String(n).padStart(2,'0');}
+
+// ══════════ PROGRESS BAR SEEK (click & drag) ══════════
+const progEl=document.getElementById('prog');
+function seekFromEvt(e){
+  if(!YTP||!_dur)return;
+  const r=progEl.getBoundingClientRect();
+  const pct=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));
+  const t=pct*_dur;
+  YTP.seekTo(t,true);
+  _cur=t;
+  renderBar();
+}
+progEl.addEventListener('mousedown',e=>{_drag=true;seekFromEvt(e);showCtrl();});
+document.addEventListener('mousemove',e=>{if(_drag)seekFromEvt(e);});
+document.addEventListener('mouseup',()=>{_drag=false;});
+progEl.addEventListener('touchstart',e=>{seekFromEvt(e.touches[0]);showCtrl();},{passive:true});
+progEl.addEventListener('touchmove', e=>{seekFromEvt(e.touches[0]);},{passive:true});
+
+// ══════════ CONTROLS ══════════
+function setPlayIcon(p){
+  document.getElementById('svgPlay').innerHTML=p
+    ?'<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>'
+    :'<polygon points="5,3 19,12 5,21"/>';
+}
+
+function togglePlay(fromKb){
+  if(!YTP)return;
+  if(_pl){YTP.pauseVideo();_pl=false;setPlayIcon(false);}
+  else   {YTP.playVideo(); _pl=true; setPlayIcon(true);}
+  if(fromKb)flash(_pl?'pause':'play');
+  showCtrl();
+}
+
+function seekBy(secs){
+  if(!YTP)return;
+  const t=Math.max(0,Math.min(_dur||99999,_cur+secs));
+  YTP.seekTo(t,true);
+  _cur=t;
+  renderBar();
+  flash(secs>0?'fwd':'rew');
+  showCtrl();
+}
+
+function toggleMute(){
+  if(!YTP)return;
+  if(_mu){YTP.unMute();_mu=false;}else{YTP.mute();_mu=true;}
+  updVolIcon();showCtrl();
+}
+function setVol(v){
+  if(!YTP)return;
+  _vol=parseInt(v);YTP.setVolume(_vol);
+  _mu=(_vol===0);updVolIcon();
+}
+function updVolIcon(){
+  document.getElementById('svgVol').innerHTML=(_mu||_vol===0)
+    ?'<path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.796 8.796 0 0 0 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3 3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a8.99 8.99 0 0 0 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4 9.91 6.09 12 8.18V4z"/>'
+    :'<path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>';
+}
+
+function cycleSpd(){
+  if(!YTP)return;
+  _si=(_si+1)%_speeds.length;
+  const s=_speeds[_si];
+  YTP.setPlaybackRate(s);
+  document.getElementById('spdBtn').textContent=s+'x';
+  toast(s+'x speed');showCtrl();
+}
+
+function doFs(){
+  const c=document.getElementById('cinema');
+  if(!document.fullscreenElement){
+    c.requestFullscreen().catch(()=>{});
+    document.getElementById('svgFs').innerHTML='<path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>';
+  }else{
+    document.exitFullscreen();
+    document.getElementById('svgFs').innerHTML='<path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>';
+  }
+}
+function doPiP(){
+  const f=document.querySelector('#ytContainer iframe');
+  if(!f)return;
+  if(document.pictureInPictureElement)document.exitPictureInPicture().catch(()=>{});
+  else if(f.requestPictureInPicture)f.requestPictureInPicture().catch(()=>{});
+}
+function goPrev(){if(PREV)location.href=PREV;}
+function goNext(){if(NEXT)location.href=NEXT;}
+
+// ══════════ KEYBOARD ══════════
+document.addEventListener('keydown',e=>{
+  if(['INPUT','TEXTAREA'].includes(document.activeElement.tagName))return;
+  switch(e.key){
+    case ' ':case 'k':case 'K': e.preventDefault();togglePlay(true);break;
+    case 'f':case 'F': doFs();toast('Fullscreen');break;
+    case 'm':case 'M': toggleMute();toast(_mu?'Muted':'Unmuted');break;
+    case 'ArrowRight': e.preventDefault();seekBy(e.shiftKey?5:10);break;
+    case 'ArrowLeft':  e.preventDefault();seekBy(e.shiftKey?-5:-10);break;
+    case 'l':case 'L': seekBy(10);break;
+    case 'j':case 'J': seekBy(-10);break;
+    case 'ArrowUp':   e.preventDefault();if(YTP){_vol=Math.min(100,_vol+10);YTP.setVolume(_vol);document.getElementById('volSl').value=_vol;toast('Vol '+_vol+'%');}break;
+    case 'ArrowDown': e.preventDefault();if(YTP){_vol=Math.max(0,_vol-10); YTP.setVolume(_vol);document.getElementById('volSl').value=_vol;toast('Vol '+_vol+'%');}break;
+    case '>':case '.': if(e.shiftKey)cycleSpd();break;
+    case '<':case ',': if(e.shiftKey&&YTP){_si=Math.max(0,_si-1);const s=_speeds[_si];YTP.setPlaybackRate(s);document.getElementById('spdBtn').textContent=s+'x';toast(s+'x speed');}break;
+  }
+});
+
+// ══════════ MOBILE DOUBLE TAP ══════════
+function mkDT(el,ringEl,action){
+  let last=0;
+  el.addEventListener('touchend',e=>{
+    const now=Date.now();
+    if(now-last<260){e.preventDefault();action();ringEl.classList.add('pop');setTimeout(()=>ringEl.classList.remove('pop'),500);}
+    else setTimeout(()=>{if(Date.now()-last>=250)togglePlay(false);},250);
+    last=now;
+  },{passive:false});
+}
+mkDT(document.getElementById('dtrL'),document.getElementById('dtrRingL'),()=>seekBy(-10));
+mkDT(document.getElementById('dtrR'),document.getElementById('dtrRingR'),()=>seekBy(10));
+document.getElementById('glass').addEventListener('click',()=>togglePlay(false));
+
+// ══════════ SHOW/HIDE CONTROLS ══════════
+const cinema=document.getElementById('cinema');
+function showCtrl(){
+  cinema.classList.add('show');
+  clearTimeout(_ctrlT);
+  _ctrlT=setTimeout(()=>{if(_pl)cinema.classList.remove('show');},3000);
+}
+cinema.addEventListener('mousemove',e=>{
+  const dot=document.getElementById('dot');
+  const r=cinema.getBoundingClientRect();
+  dot.style.display='block';
+  dot.style.left=(e.clientX-r.left)+'px';
+  dot.style.top=(e.clientY-r.top)+'px';
+  showCtrl();
+});
+cinema.addEventListener('mouseleave',()=>{document.getElementById('dot').style.display='none';});
+cinema.addEventListener('touchstart',showCtrl,{passive:true});
+
+// ══════════ ANIMATIONS ══════════
+const ICONS={
+  play:'<polygon points="5,3 19,12 5,21"/>',
+  pause:'<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>',
+  fwd:'<path d="M12 5V1l5 5-5 5V7c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6h2c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8z"/><text x="13" y="15" font-size="5" fill="white" text-anchor="middle" font-family="sans-serif" font-weight="bold">10</text>',
+  rew:'<path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/><text x="11" y="15" font-size="5" fill="white" text-anchor="middle" font-family="sans-serif" font-weight="bold">10</text>'
+};
+function flash(type){
+  const el=document.getElementById('cf');
+  document.getElementById('cf-svg').innerHTML=ICONS[type]||ICONS.play;
+  el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop');
+  el.addEventListener('animationend',()=>el.classList.remove('pop'),{once:true});
+}
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('on');
+  clearTimeout(_toastT);_toastT=setTimeout(()=>t.classList.remove('on'),1400);
+}
+
+// ══════════ MISC ══════════
+window.addEventListener('scroll',()=>document.getElementById('topbar').classList.toggle('bg',scrollY>10));
+function filterPl(v){
+  v=v.toLowerCase();
+  document.querySelectorAll('.pi').forEach(i=>i.style.display=(!v||i.dataset.title.includes(v))?'':'none');
+  document.querySelectorAll('.ch-sep').forEach(h=>h.style.display=(!v||h.dataset.ch.includes(v))?'':'none');
+}
+setTimeout(()=>{const a=document.querySelector('.pi.now');if(a)a.scrollIntoView({block:'center',behavior:'smooth'});},600);
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden&&_pl&&YTP){try{YTP.pauseVideo();}catch(e){}_pl=false;setPlayIcon(false);}
+});
+function showErr(m){
+  document.getElementById('loader').innerHTML=
+    '<svg width="36" height="36" viewBox="0 0 24 24" fill="var(--red)"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>'+
+    '<div style="font-size:.82rem;color:var(--muted);margin-top:6px">'+m+'</div>';
+}
+
+// ══════════ ENTRY POINT — YouTube API calls this when ready ══════════
+function onYouTubeIframeAPIReady(){
+  loadVideo();
+}
+
+document.getElementById('btnPlay').addEventListener('click',()=>togglePlay(false));
+</script>
+{% endblock %}

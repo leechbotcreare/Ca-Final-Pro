@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}Dashboard – CAFinalPro{% endblock %}
+{% block body %}
+<style>
+nav{background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 5%;height:60px;}
+.nav-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.15rem;}
+.nav-logo span{color:var(--accent);}
+.nav-right{display:flex;align-items:center;gap:1rem;}
+.nav-name{font-size:0.82rem;color:var(--muted);}
+.btn-logout{background:transparent;border:1px solid var(--border);color:var(--muted);padding:0.38rem 0.85rem;border-radius:7px;cursor:pointer;font-size:0.78rem;font-family:'DM Sans',sans-serif;transition:all 0.2s;text-decoration:none;}
+.btn-logout:hover{border-color:rgba(239,68,68,0.4);color:#fca5a5;}
+.main{max-width:1100px;margin:0 auto;padding:2rem 5%;}
+.greeting{font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;margin-bottom:0.3rem;}
+.greeting span{color:var(--accent);}
+.sub{font-size:0.85rem;color:var(--muted);margin-bottom:2rem;}
+.sec-title{font-family:'Syne',sans-serif;font-weight:700;font-size:0.88rem;margin-bottom:1rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;}
+.subjects-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;margin-bottom:2.5rem;}
+.subj-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.5rem;text-decoration:none;color:var(--text);transition:all 0.22s;position:relative;overflow:hidden;}
+.subj-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--gradient);}
+.subj-card:hover{border-color:var(--accent);transform:translateY(-3px);}
+.subj-icon{font-size:2rem;margin-bottom:0.75rem;}
+.subj-name{font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;margin-bottom:0.3rem;}
+.subj-count{font-size:0.78rem;color:var(--muted);}
+.subj-arrow{position:absolute;bottom:1.25rem;right:1.25rem;color:var(--accent);font-size:1.1rem;}
+.ann-list{display:flex;flex-direction:column;gap:0.65rem;}
+.ann-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1rem 1.25rem;display:flex;gap:0.85rem;align-items:flex-start;}
+.ann-icon{font-size:1.3rem;flex-shrink:0;}
+.ann-title{font-weight:600;font-size:0.88rem;margin-bottom:0.2rem;}
+.ann-body{font-size:0.8rem;color:var(--muted);line-height:1.5;}
+.ann-date{font-size:0.7rem;color:var(--muted);margin-top:0.3rem;}
+@media(max-width:768px){.subjects-grid{grid-template-columns:1fr;}}
+</style>
+
+<nav>
+  <a href="/" class="nav-logo">CA<span>Final</span>Pro</a>
+  <div class="nav-right">
+    <span class="nav-name">👤 {{ name }}</span>
+    <a href="/logout" class="btn-logout">Sign Out</a>
+  </div>
+</nav>
+
+<div class="main">
+
+  {% if ip_warning %}
+  <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:1rem 1.25rem;margin-bottom:1.5rem;display:flex;gap:0.85rem;align-items:flex-start;">
+    <div style="font-size:1.4rem;flex-shrink:0;">🚨</div>
+    <div>
+      <div style="font-weight:700;font-size:0.9rem;color:#fca5a5;margin-bottom:0.3rem;">Security Alert — Multiple Devices Detected</div>
+      <div style="font-size:0.82rem;color:var(--muted);line-height:1.55;">Your account has been accessed from more than 3 different devices or locations today. If this wasn't you, your account credentials may be compromised or being shared. This activity has been reported to the admin. Please secure your account immediately.</div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if not has_access %}
+  <div style="background:rgba(249,115,22,0.07);border:1px solid rgba(249,115,22,0.25);border-radius:12px;padding:1rem 1.25rem;margin-bottom:1.5rem;display:flex;gap:0.85rem;align-items:center;justify-content:space-between;flex-wrap:wrap;">
+    <div style="display:flex;gap:0.85rem;align-items:flex-start;">
+      <div style="font-size:1.4rem;">🔒</div>
+      <div>
+        <div style="font-weight:700;font-size:0.9rem;color:var(--accent);margin-bottom:0.2rem;">Access Not Activated</div>
+        <div style="font-size:0.8rem;color:var(--muted);">You can browse subjects but cannot watch lectures yet. Contact admin to activate your access.</div>
+      </div>
+    </div>
+    {% set wa = settings.get('whatsapp_number','').replace('+','').replace(' ','') %}
+    {% if wa %}
+    <a href="https://wa.me/{{ wa }}?text={{ 'Hi, I want to activate my CAFinalPro account. Email: ' ~ session.get('student_email','') | urlencode }}" target="_blank"
+       style="display:inline-flex;align-items:center;gap:0.5rem;background:#25D366;color:#fff;padding:0.55rem 1.1rem;border-radius:8px;font-size:0.82rem;font-weight:700;text-decoration:none;white-space:nowrap;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      Activate via WhatsApp
+    </a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <div class="greeting">Welcome back, <span>{{ name }}</span> 👋</div>
+  <div class="sub">Continue your CA Final preparation where you left off.</div>
+
+  <div class="sec-title">📦 Group 1 – Your Subjects</div>
+  <div class="subjects-grid">
+    {% for s in subjects %}
+    <a href="/subject/{{ s.code }}" class="subj-card">
+      <div class="subj-icon">{{ s.icon }}</div>
+      <div class="subj-name">{{ s.name }}</div>
+      <div class="subj-count">{{ s.count }} lecture{{ 's' if s.count != 1 }}</div>
+      <div class="subj-arrow">→</div>
+    </a>
+    {% endfor %}
+  </div>
+
+  {% if announcements and settings.get('show_announcements', True) %}
+  <div class="sec-title">📢 Announcements</div>
+  <div class="ann-list">
+    {% for a in announcements %}
+    <div class="ann-card">
+      <div class="ann-icon">{{ a.icon or '📢' }}</div>
+      <div>
+        <div class="ann-title">{{ a.title }}</div>
+        <div class="ann-body">{{ a.body }}</div>
+        <div class="ann-date">{{ a.created_at }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

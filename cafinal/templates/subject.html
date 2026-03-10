@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% block title %}{{ subject_name }} – CAFinalPro{% endblock %}
+{% block body %}
+<style>
+nav{background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 5%;height:60px;}
+.nav-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.15rem;}
+.nav-logo span{color:var(--accent);}
+.nav-back{font-size:0.83rem;color:var(--muted);text-decoration:none;transition:color 0.2s;}
+.nav-back:hover{color:var(--text);}
+.main{max-width:960px;margin:0 auto;padding:2rem 5% 4rem;}
+
+.hero{margin-bottom:2.5rem;}
+.hero-label{font-size:0.7rem;color:var(--accent);text-transform:uppercase;letter-spacing:0.12em;font-weight:700;margin-bottom:0.5rem;}
+.hero-title{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;margin-bottom:0.4rem;}
+.hero-sub{font-size:0.87rem;color:var(--muted);max-width:580px;line-height:1.65;}
+.stats{display:flex;gap:1.5rem;margin-top:1rem;flex-wrap:wrap;}
+.stat{font-size:0.8rem;color:var(--muted);}
+.stat strong{color:var(--text);}
+
+.sec-hdr{font-family:'Syne',sans-serif;font-weight:800;font-size:0.95rem;margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem;}
+
+/* Chapter accordion */
+.ch-list{display:flex;flex-direction:column;gap:0.6rem;margin-bottom:2.5rem;}
+.ch-item{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:border-color 0.2s,box-shadow 0.2s;}
+.ch-item.open{border-color:var(--accent);box-shadow:0 0 0 1px rgba(249,115,22,0.15);}
+
+.ch-head{display:flex;align-items:center;gap:1rem;padding:1rem 1.25rem;cursor:pointer;transition:background 0.15s;user-select:none;}
+.ch-head:hover{background:rgba(249,115,22,0.04);}
+
+.ch-num{width:42px;height:42px;border-radius:10px;flex-shrink:0;background:rgba(255,255,255,0.05);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;color:var(--muted);transition:all 0.2s;}
+.ch-item.open .ch-num{background:var(--gradient);border-color:transparent;color:#fff;}
+
+.ch-text{flex:1;min-width:0;}
+.ch-name{font-weight:600;font-size:0.92rem;margin-bottom:0.15rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ch-sub{font-size:0.7rem;color:var(--muted);}
+
+.ch-pill{font-size:0.62rem;font-weight:700;padding:0.22rem 0.6rem;border-radius:20px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.2);color:var(--accent);white-space:nowrap;flex-shrink:0;}
+
+.ch-caret{width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,0.05);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform 0.25s,background 0.15s;}
+.ch-caret svg{width:12px;height:12px;fill:var(--muted);transition:fill 0.15s;}
+.ch-item.open .ch-caret{transform:rotate(180deg);background:rgba(249,115,22,0.1);border-color:rgba(249,115,22,0.25);}
+.ch-item.open .ch-caret svg{fill:var(--accent);}
+
+/* Sliding panel */
+.ch-panel{max-height:0;overflow:hidden;transition:max-height 0.38s cubic-bezier(0.4,0,0.2,1);}
+.ch-item.open .ch-panel{max-height:5000px;}
+
+.lec-wrap{padding:0 1.1rem 1.1rem;}
+.lec-sep{height:1px;background:var(--border);margin-bottom:0.75rem;}
+
+.lec-row{display:flex;align-items:center;gap:0.85rem;padding:0.68rem 0.6rem;border-radius:10px;text-decoration:none;color:var(--text);transition:background 0.15s;}
+.lec-row:hover{background:rgba(249,115,22,0.06);}
+
+.lec-idx{width:28px;height:28px;border-radius:7px;flex-shrink:0;background:rgba(255,255,255,0.04);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.68rem;color:var(--muted);font-variant-numeric:tabular-nums;transition:all 0.15s;}
+.lec-row:hover .lec-idx{background:rgba(249,115,22,0.1);border-color:rgba(249,115,22,0.25);color:var(--accent);}
+
+.lec-info{flex:1;min-width:0;}
+.lec-title{font-weight:500;font-size:0.87rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:0.1rem;}
+.lec-meta{font-size:0.69rem;color:var(--muted);}
+
+.lec-btn{width:28px;height:28px;border-radius:50%;flex-shrink:0;background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.15);display:flex;align-items:center;justify-content:center;font-size:0.65rem;transition:all 0.15s;}
+.lec-row:hover .lec-btn{background:var(--gradient);border-color:transparent;color:#fff;}
+
+/* PDFs */
+.pdf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:0.85rem;margin-bottom:2rem;}
+.pdf-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1rem;text-decoration:none;color:var(--text);transition:all 0.2s;display:block;}
+.pdf-card:hover{border-color:var(--accent);}
+.pdf-icon{font-size:1.6rem;margin-bottom:0.55rem;}
+.pdf-title{font-weight:600;font-size:0.83rem;margin-bottom:0.2rem;}
+.pdf-meta{font-size:0.68rem;color:var(--muted);}
+.pdf-link{margin-top:0.55rem;font-size:0.7rem;color:var(--accent);}
+.empty{text-align:center;padding:2.5rem;color:var(--muted);background:var(--card);border:1px solid var(--border);border-radius:14px;font-size:0.88rem;}
+</style>
+
+<nav>
+  <a href="/" class="nav-logo">CA<span>Final</span>Pro</a>
+  <a href="/dashboard" class="nav-back">← Dashboard</a>
+</nav>
+
+<div class="main">
+  <div class="hero">
+    <div class="hero-label">📦 Group 1 · CA Final</div>
+    <div class="hero-title">{{ subject_name }}</div>
+    <div class="hero-sub">{{ settings.get('desc_'+code, '') }}</div>
+    <div class="stats">
+      <div class="stat"><strong>{{ lectures|length }}</strong> Lectures</div>
+      <div class="stat"><strong>{{ chapters|length }}</strong> Chapters</div>
+      <div class="stat"><strong>{{ pdfs|length }}</strong> PDFs</div>
+    </div>
+  </div>
+
+  {% if chapters %}
+  <div class="sec-hdr">🎬 Video Lectures</div>
+  <div class="ch-list">
+    {% for ch_name, lecs in chapters.items() %}
+    <div class="ch-item" id="chi{{ loop.index }}">
+      <div class="ch-head" onclick="toggleCh({{ loop.index }})">
+        <div class="ch-num">{{ loop.index }}</div>
+        <div class="ch-text">
+          <div class="ch-name">{{ ch_name }}</div>
+          <div class="ch-sub">{{ lecs|length }} lecture{{ 's' if lecs|length != 1 }}</div>
+        </div>
+        <span class="ch-pill">{{ lecs|length }} videos</span>
+        <div class="ch-caret">
+          <svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+        </div>
+      </div>
+      <div class="ch-panel" id="pnl{{ loop.index }}">
+        <div class="lec-wrap">
+          <div class="lec-sep"></div>
+          {% for l in lecs %}
+          <a href="/watch/{{ l.id }}" class="lec-row">
+            <div class="lec-idx">{{ loop.index }}</div>
+            <div class="lec-info">
+              <div class="lec-title">{{ l.title }}</div>
+              <div class="lec-meta">
+                {%- if l.duration %}⏱ {{ l.duration }}{% endif %}
+                {%- if l.description %} · {{ l.description[:55] }}{% if l.description|length > 55 %}…{% endif %}{% endif %}
+              </div>
+            </div>
+            <div class="lec-btn">▶</div>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty">🎬 No lectures uploaded yet for this subject. Check back soon!</div>
+  {% endif %}
+
+  {% if pdfs %}
+  <div class="sec-hdr" style="margin-top:2rem;">📄 Study Material</div>
+  <div class="pdf-grid">
+    {% for p in pdfs %}
+    <a href="https://drive.google.com/file/d/{{ p.file_id }}/view" target="_blank" class="pdf-card">
+      <div class="pdf-icon">📄</div>
+      <div class="pdf-title">{{ p.title }}</div>
+      <div class="pdf-meta">{% if p.pages %}{{ p.pages }} pages{% endif %}{% if p.version %} · {{ p.version }}{% endif %}</div>
+      <div class="pdf-link">Open PDF →</div>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+
+<script>
+function toggleCh(i) {
+  const item = document.getElementById('chi' + i);
+  const wasOpen = item.classList.contains('open');
+  // close all
+  document.querySelectorAll('.ch-item').forEach(el => el.classList.remove('open'));
+  // open this one if it was closed
+  if (!wasOpen) item.classList.add('open');
+}
+// open first chapter by default
+window.addEventListener('DOMContentLoaded', () => {
+  const first = document.querySelector('.ch-item');
+  if (first) first.classList.add('open');
+});
+</script>
+{% endblock %}

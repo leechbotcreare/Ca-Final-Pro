@@ -1,0 +1,59 @@
+{% extends "admin/base.html" %}
+{% block title %}PDFs – Admin{% endblock %}
+{% block content %}
+<div class="page-hdr">
+  <div><div class="page-title">PDF Notes</div><div class="page-sub">{{ pdfs|length }} PDF(s) shown</div></div>
+  <a href="/admin/pdfs/add" class="btn btn-primary">➕ Add PDF</a>
+</div>
+
+<form method="GET" class="filter-bar">
+  <input class="search-inp" type="text" name="search" placeholder="🔍 Search PDFs..." value="{{ search }}">
+  <select name="subject" onchange="this.form.submit()">
+    <option value="">All Subjects</option>
+    <option value="FR"    {% if subj_filter=='FR'    %}selected{% endif %}>Financial Reporting (FR)</option>
+    <option value="AFM"   {% if subj_filter=='AFM'   %}selected{% endif %}>Adv. Financial Mgmt (AFM)</option>
+    <option value="AUDIT" {% if subj_filter=='AUDIT' %}selected{% endif %}>Adv. Auditing & Ethics</option>
+  </select>
+  <button type="submit" class="btn btn-ghost btn-sm">Filter</button>
+  <a href="/admin/pdfs" class="btn btn-ghost btn-sm">Clear</a>
+</form>
+
+<div class="tbl-wrap">
+  <table>
+    <thead><tr><th>#</th><th>Title</th><th>Subject</th><th>Pages</th><th>Version</th><th>Drive File ID</th><th>Status</th><th>Actions</th></tr></thead>
+    <tbody>
+      {% for p in pdfs %}
+      <tr>
+        <td style="color:var(--muted);font-size:0.72rem;">{{ loop.index }}</td>
+        <td><div class="td-main">{{ p.title }}</div><div class="td-sub">{{ p.version }}</div></td>
+        <td><span class="badge badge-{{ p.subject|lower }}">{{ p.subject }}</span></td>
+        <td style="font-size:0.78rem;">{{ p.pages or '–' }}</td>
+        <td style="font-size:0.78rem;color:var(--muted);">{{ p.version or '–' }}</td>
+        <td>
+          <code title="{{ p.file_id }}">{{ p.file_id[:14] }}…</code>
+          <button onclick="navigator.clipboard.writeText('{{ p.file_id }}');this.textContent='✅'" style="background:none;border:none;cursor:pointer;font-size:0.7rem;color:var(--muted);margin-left:4px;">📋</button>
+        </td>
+        <td>
+          <form method="POST" action="/admin/pdfs/toggle/{{ p.id }}" style="display:inline;">
+            <button type="submit" class="badge {{ 'badge-on' if p.visible else 'badge-off' }}" style="cursor:pointer;border:none;background:inherit;">
+              {{ '✅ Visible' if p.visible else '🔒 Hidden' }}
+            </button>
+          </form>
+        </td>
+        <td>
+          <div style="display:flex;gap:0.35rem;">
+            <a href="https://drive.google.com/file/d/{{ p.file_id }}/view" target="_blank" class="btn btn-icon btn-sm" title="Preview">👁️</a>
+            <a href="/admin/pdfs/edit/{{ p.id }}" class="btn btn-icon btn-sm" title="Edit">✏️</a>
+            <form method="POST" action="/admin/pdfs/delete/{{ p.id }}" onsubmit="return confirm('Delete this PDF?')">
+              <button type="submit" class="btn btn-icon btn-sm btn-danger" title="Delete">🗑️</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% else %}
+      <tr class="empty-row"><td colspan="8">No PDFs yet. <a href="/admin/pdfs/add" style="color:var(--accent);">Add your first PDF →</a></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

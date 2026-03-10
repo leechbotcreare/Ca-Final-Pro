@@ -1,0 +1,94 @@
+{% extends "admin/base.html" %}
+{% block title %}Students – Admin{% endblock %}
+{% block content %}
+<div class="page-hdr">
+  <div>
+    <div class="page-title">👥 Students</div>
+    <div class="page-sub">{{ users|length }} registered · manage access, block/unblock</div>
+  </div>
+</div>
+
+{% if users %}
+<div class="tbl-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Name / Email</th>
+        <th>Joined</th>
+        <th>Access</th>
+        <th>Status</th>
+        <th>IP Alert</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in users %}
+      {% set flagged = flag_map.get(u.id) %}
+      <tr>
+        <td style="color:var(--muted);font-size:0.72rem;">{{ loop.index }}</td>
+        <td>
+          <div class="td-main">{{ u.name or '–' }}</div>
+          <div class="td-sub">{{ u.email }}</div>
+        </td>
+        <td style="font-size:0.75rem;color:var(--muted);">{{ u.joined[:10] if u.joined else '–' }}</td>
+        <td>
+          {% if u.get('access_granted') %}
+            <span class="badge" style="background:rgba(34,197,94,0.1);color:#86efac;">✅ Granted</span>
+          {% else %}
+            <span class="badge" style="background:rgba(249,115,22,0.1);color:#fb923c;">🔒 No Access</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if u.get('blocked') %}
+            <span class="badge" style="background:rgba(239,68,68,0.12);color:#fca5a5;">🚫 Blocked</span>
+          {% else %}
+            <span class="badge" style="background:rgba(34,197,94,0.08);color:#86efac;">Active</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if flagged %}
+            <span class="badge" style="background:rgba(239,68,68,0.12);color:#fca5a5;" title="{{ flagged.ips|join(', ') }}">
+              🚨 {{ flagged.ips|length }} IPs ({{ flagged.date }})
+            </span>
+          {% else %}
+            <span style="color:var(--sub);font-size:0.72rem;">—</span>
+          {% endif %}
+        </td>
+        <td>
+          <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+            <!-- Access toggle -->
+            {% if u.get('access_granted') %}
+            <form method="POST" action="/admin/users/revoke/{{ u.id }}">
+              <button type="submit" class="btn btn-ghost btn-sm" style="border-color:rgba(249,115,22,0.3);color:#fb923c;">Revoke</button>
+            </form>
+            {% else %}
+            <form method="POST" action="/admin/users/grant/{{ u.id }}">
+              <button type="submit" class="btn btn-ghost btn-sm" style="border-color:rgba(34,197,94,0.3);color:#86efac;">Grant Access</button>
+            </form>
+            {% endif %}
+            <!-- Block toggle -->
+            {% if u.get('blocked') %}
+            <form method="POST" action="/admin/users/unblock/{{ u.id }}">
+              <button type="submit" class="btn btn-ghost btn-sm" style="border-color:rgba(34,197,94,0.3);color:#86efac;">Unblock</button>
+            </form>
+            {% else %}
+            <form method="POST" action="/admin/users/block/{{ u.id }}" onsubmit="return confirm('Block {{ u.email }}?')">
+              <button type="submit" class="btn btn-ghost btn-sm" style="border-color:rgba(239,68,68,0.3);color:#fca5a5;">Block</button>
+            </form>
+            {% endif %}
+            <!-- Delete -->
+            <form method="POST" action="/admin/users/delete/{{ u.id }}" onsubmit="return confirm('Permanently delete {{ u.email }}?')">
+              <button type="submit" class="btn btn-danger btn-sm">🗑️</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card" style="padding:2.5rem;text-align:center;color:var(--muted);">No students registered yet.</div>
+{% endif %}
+{% endblock %}

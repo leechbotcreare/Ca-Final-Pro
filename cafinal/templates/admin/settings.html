@@ -1,0 +1,92 @@
+{% extends "admin/base.html" %}
+{% block title %}Settings – Admin{% endblock %}
+{% block content %}
+<div class="page-hdr">
+  <div><div class="page-title">⚙️ Site Settings</div><div class="page-sub">Control all platform behaviour from here</div></div>
+</div>
+
+<form method="POST" style="max-width:720px;">
+
+  <!-- General -->
+  <div class="form-card">
+    <div style="font-weight:700;font-size:0.9rem;margin-bottom:1.1rem;color:var(--accent);">🌐 General</div>
+    <div class="form-row">
+      <div class="fg"><label>Site Name</label><input type="text" name="site_name" value="{{ settings.site_name }}"></div>
+      <div class="fg"><label>Tagline</label><input type="text" name="tagline" value="{{ settings.tagline }}"></div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>Support Email</label><input type="email" name="support_email" value="{{ settings.support_email or '' }}"></div>
+      <div class="fg">
+        <label>WhatsApp Number for Purchase</label>
+        <input type="text" name="whatsapp_number" value="{{ settings.whatsapp_number or '' }}" placeholder="919876543210 (with country code, no +)">
+        <div class="hint">Students will click a button that opens WhatsApp chat directly to this number.</div>
+      </div>
+    </div>
+    <div class="fg">
+      <label>PW Lectures Disclaimer (shown on paywall & subject page)</label>
+      <textarea name="pw_message" rows="3" placeholder="Message about PW lectures...">{{ settings.pw_message or '' }}</textarea>
+      <div class="hint">Example: "These lectures are by PW. For doubt solving & tests, also purchase from PW directly."</div>
+    </div>
+  </div>
+
+  <!-- Pricing -->
+  <div class="form-card">
+    <div style="font-weight:700;font-size:0.9rem;margin-bottom:1.1rem;color:var(--accent);">💰 Pricing</div>
+    <div class="form-row">
+      <div class="fg"><label>Group 1 Price</label><input type="text" name="g1_price" value="{{ settings.g1_price or '' }}" placeholder="e.g. ₹2000"></div>
+      <div class="fg"><label>Group 2 Price</label><input type="text" name="g2_price" value="{{ settings.g2_price or '' }}" placeholder="e.g. Coming Soon"></div>
+    </div>
+  </div>
+
+  <!-- Subject descriptions -->
+  <div class="form-card">
+    <div style="font-weight:700;font-size:0.9rem;margin-bottom:1.1rem;color:var(--accent);">📚 Subject Descriptions</div>
+    {% for code, name in subject_names.items() %}
+    <div class="fg">
+      <label>{{ name }}</label>
+      <input type="text" name="desc_{{ code }}" value="{{ settings.get('desc_'+code, '') }}" placeholder="Short description shown on subject page">
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- YouTube API -->
+  <div class="form-card">
+    <div style="font-weight:700;font-size:0.9rem;margin-bottom:1.1rem;color:var(--accent);">📺 YouTube Integration</div>
+    <div class="fg">
+      <label>YouTube Data API Key</label>
+      <input type="text" name="yt_api_key" value="{{ settings.yt_api_key or '' }}" placeholder="AIza...">
+      <div class="hint">Used to auto-fetch video duration when adding lectures. Get free key from Google Cloud Console → YouTube Data API v3.</div>
+    </div>
+  </div>
+
+  <!-- Toggles -->
+  <div class="form-card">
+    <div style="font-weight:700;font-size:0.9rem;margin-bottom:1.1rem;color:var(--accent);">🔧 Feature Toggles</div>
+    {% set toggles = [
+      ('registration_open','Registration Open','Allow new students to sign up'),
+      ('show_group2','Show Group 2','Display Group 2 subjects on homepage'),
+      ('show_announcements','Show Announcements','Display announcements to students'),
+    ] %}
+    {% for name, label, hint in toggles %}
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:0.75rem 0;border-bottom:1px solid var(--border);">
+      <div><div style="font-size:0.85rem;font-weight:500;">{{ label }}</div><div style="font-size:0.72rem;color:var(--muted);">{{ hint }}</div></div>
+      <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
+        <input type="checkbox" name="{{ name }}" {% if settings.get(name) %}checked{% endif %} style="width:16px;height:16px;">
+        <span style="font-size:0.78rem;color:var(--muted);">Enabled</span>
+      </label>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Admin password -->
+  <div class="form-card">
+    <div style="font-weight:700;font-size:0.9rem;margin-bottom:1.1rem;color:var(--accent);">🔐 Change Admin Password</div>
+    <div class="fg">
+      <label>New Password (leave blank to keep current)</label>
+      <input type="password" name="new_password" placeholder="New password…" autocomplete="new-password">
+    </div>
+  </div>
+
+  <button type="submit" class="btn btn-primary" style="width:100%;padding:0.82rem;font-size:0.9rem;justify-content:center;">💾 Save All Settings</button>
+</form>
+{% endblock %}

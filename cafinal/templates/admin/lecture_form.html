@@ -1,0 +1,200 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ action }} Lecture – Admin{% endblock %}
+{% block content %}
+<div class="page-hdr">
+  <div>
+    <div class="page-title">{{ action }} Lecture</div>
+    <div class="page-sub">{% if action == 'Edit' %}Editing: {{ lecture.title }}{% else %}Add a new video lecture{% endif %}</div>
+  </div>
+  <a href="/admin/lectures" class="btn btn-ghost">← Back</a>
+</div>
+
+<div class="form-card">
+  {% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+
+  <form method="POST" id="lf">
+
+    <div class="fg">
+      <label>Lecture Title *</label>
+      <input type="text" name="title" value="{{ lecture.title or '' }}" placeholder="e.g. Ind AS 116 – Leases Full Chapter" required autofocus>
+    </div>
+
+    <div class="form-row">
+      <div class="fg">
+        <label>Subject *</label>
+        <select name="subject" id="subjSel" required onchange="loadChapters(this.value)">
+          <option value="">Select Subject</option>
+          <option value="FR"    {% if lecture.subject == 'FR'    %}selected{% endif %}>Financial Reporting (FR)</option>
+          <option value="AFM"   {% if lecture.subject == 'AFM'   %}selected{% endif %}>Adv. Financial Mgmt (AFM)</option>
+          <option value="AUDIT" {% if lecture.subject == 'AUDIT' %}selected{% endif %}>Advanced Auditing (AUDIT)</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>Duration</label>
+        <input type="text" name="duration" value="{{ lecture.duration or '' }}" placeholder="e.g. 1h 42m">
+      </div>
+    </div>
+
+    <!-- Chapter: dropdown + optional new name -->
+    <div class="fg">
+      <label>Chapter *</label>
+      <select name="chapter" id="chSel" required>
+        <option value="">— select subject first —</option>
+        {% if lecture.chapter %}
+        <option value="{{ lecture.chapter }}" selected>{{ lecture.chapter }}</option>
+        {% endif %}
+        <option value="__new__">➕ Add new chapter…</option>
+      </select>
+      <div id="newChWrap" style="display:none;margin-top:0.5rem;">
+        <input type="text" id="newChIn" name="new_chapter" placeholder="Type new chapter name…">
+        <div class="hint">⚠️ Double-check spelling — this creates a new chapter.</div>
+      </div>
+      <div class="hint" id="chHint">Select a subject to see its chapters.</div>
+    </div>
+
+    <div class="fg">
+      <label>YouTube Video ID *</label>
+      <div style="display:flex;gap:0.5rem;align-items:flex-start;">
+        <div style="flex:1;">
+          <input type="text" name="video_id" id="vidId" value="{{ lecture.video_id or '' }}" placeholder="e.g. dQw4w9WgXcQ" required oninput="scheduleFetch(this.value)">
+          <div class="hint">📌 From: youtube.com/watch?v=<strong>THIS_PART</strong></div>
+        </div>
+        <button type="button" id="fetchBtn" onclick="fetchDuration()" class="btn btn-ghost" style="white-space:nowrap;margin-top:0;">⏱ Fetch Duration</button>
+      </div>
+    </div>
+
+    <div class="fg">
+      <label>Duration <span id="durStatus" style="font-size:0.7rem;color:var(--accent);margin-left:0.5rem;"></span></label>
+      <input type="text" name="duration" id="durIn" value="{{ lecture.duration or '' }}" placeholder="Auto-filled when you paste Video ID…">
+    </div>
+      <textarea name="description" placeholder="Topics covered in this lecture…">{{ lecture.description or '' }}</textarea>
+    </div>
+
+    <div class="form-row">
+      <div class="fg">
+        <label>Order within Chapter</label>
+        <input type="number" name="order" value="{{ lecture.order or '' }}" placeholder="1" min="1">
+        <div class="hint">Lower number = shown first within this chapter.</div>
+      </div>
+      <div class="fg">
+        <label>Visible to Students</label>
+        <select name="visible">
+          <option value="true"  {% if lecture.get('visible', True) %}selected{% endif %}>✅ Visible</option>
+          <option value="false" {% if not lecture.get('visible', True) %}selected{% endif %}>🔒 Hidden</option>
+        </select>
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary" style="width:100%;padding:0.78rem;font-size:0.9rem;justify-content:center;">
+      {{ '💾 Update Lecture' if action == 'Edit' else '✅ Save Lecture' }}
+    </button>
+  </form>
+</div>
+
+<script>
+// All chapters from backend — keyed by subject
+const ALL_CHAPTERS = {{ all_chapters | tojson }};
+const CUR_CHAPTER  = "{{ lecture.chapter or '' }}";
+
+function loadChapters(subj) {
+  const sel   = document.getElementById('chSel');
+  const hint  = document.getElementById('chHint');
+  const chs   = ALL_CHAPTERS[subj] || [];
+
+  // Rebuild options
+  sel.innerHTML = '';
+  if (chs.length === 0) {
+    sel.innerHTML = '<option value="">No chapters yet — add new below</option>';
+    hint.textContent = 'No chapters for this subject yet. Use "Add new chapter" below.';
+  } else {
+    sel.innerHTML = '<option value="">— choose chapter —</option>';
+    hint.textContent = chs.length + ' chapter(s) available.';
+  }
+
+  chs.forEach(ch => {
+    const o = document.createElement('option');
+    o.value = ch;
+    o.textContent = ch;
+    if (ch === CUR_CHAPTER) o.selected = true;
+    sel.appendChild(o);
+  });
+
+  // Always add "new chapter" option at bottom
+  const newOpt = document.createElement('option');
+  newOpt.value = '__new__';
+  newOpt.textContent = '➕ Add new chapter…';
+  sel.appendChild(newOpt);
+}
+
+document.getElementById('chSel').addEventListener('change', function() {
+  const wrap = document.getElementById('newChWrap');
+  const inp  = document.getElementById('newChIn');
+  if (this.value === '__new__') {
+    wrap.style.display = 'block';
+    inp.required = true;
+    inp.focus();
+    this.removeAttribute('required'); // new_chapter field takes over
+  } else {
+    wrap.style.display = 'none';
+    inp.required = false;
+    inp.value = '';
+    this.required = true;
+  }
+});
+
+document.getElementById('lf').addEventListener('submit', function(e) {
+  const chSel = document.getElementById('chSel');
+  const newIn = document.getElementById('newChIn');
+  if (chSel.value === '__new__' && !newIn.value.trim()) {
+    e.preventDefault();
+    newIn.focus();
+    alert('Please type the new chapter name.');
+  }
+  // If selecting existing chapter, clear new_chapter so it doesn't override
+  if (chSel.value !== '__new__') {
+    newIn.value = '';
+  }
+});
+
+// Auto-fetch YouTube duration
+let _fetchTimer = null;
+function scheduleFetch(val) {
+  clearTimeout(_fetchTimer);
+  // Extract video ID from full URL if pasted
+  const m = val.match(/(?:v=|embed\/|youtu\.be\/)([^?&\s]{11})/);
+  const id = m ? m[1] : (val.length === 11 ? val : '');
+  if (id.length === 11) {
+    document.getElementById('vidId').value = id; // normalise to just the ID
+    _fetchTimer = setTimeout(() => fetchDuration(), 800);
+  }
+}
+async function fetchDuration() {
+  const id = document.getElementById('vidId').value.trim();
+  if (!id || id.length !== 11) return;
+  const btn = document.getElementById('fetchBtn');
+  const st  = document.getElementById('durStatus');
+  btn.textContent = '⏳ Fetching…';
+  st.textContent  = '';
+  try {
+    const r = await fetch('/admin/api/yt_duration?v=' + encodeURIComponent(id));
+    const d = await r.json();
+    if (d.duration) {
+      document.getElementById('durIn').value = d.duration;
+      st.textContent = '✅ Auto-filled!';
+      st.style.color = '#86efac';
+    } else {
+      st.textContent = d.error || 'Could not fetch';
+      st.style.color = '#fca5a5';
+    }
+  } catch(e) {
+    st.textContent = 'Network error';
+    st.style.color = '#fca5a5';
+  }
+  btn.textContent = '⏱ Fetch Duration';
+}
+
+// Init
+const initSubj = document.getElementById('subjSel').value;
+if (initSubj) loadChapters(initSubj);
+</script>
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends "admin/base.html" %}
+{% block title %}Dashboard – Admin{% endblock %}
+{% block content %}
+<div class="page-hdr">
+  <div><div class="page-title">Dashboard</div><div class="page-sub">Welcome back! Here's your platform overview.</div></div>
+</div>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="stat-val">{{ lec_count }}</div><div class="stat-lbl">Total Lectures</div></div>
+  <div class="stat-card"><div class="stat-val">{{ pdf_count }}</div><div class="stat-lbl">Total PDFs</div></div>
+  <div class="stat-card"><div class="stat-val">{{ user_count }}</div><div class="stat-lbl">Registered Students</div></div>
+  <div class="stat-card"><div class="stat-val">{{ ann_count }}</div><div class="stat-lbl">Announcements</div></div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:2rem;">
+  <a href="/admin/lectures/add" style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.25rem;transition:all 0.2s;display:block;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+    <div style="font-size:1.8rem;margin-bottom:0.6rem;">➕🎬</div>
+    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.88rem;margin-bottom:0.2rem;">Add Lecture</div>
+    <div style="font-size:0.75rem;color:var(--muted);">Upload a new video lecture</div>
+  </a>
+  <a href="/admin/pdfs/add" style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.25rem;transition:all 0.2s;display:block;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+    <div style="font-size:1.8rem;margin-bottom:0.6rem;">➕📄</div>
+    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.88rem;margin-bottom:0.2rem;">Add PDF</div>
+    <div style="font-size:0.75rem;color:var(--muted);">Add a study document</div>
+  </a>
+  <a href="/admin/announcements" style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.25rem;transition:all 0.2s;display:block;" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+    <div style="font-size:1.8rem;margin-bottom:0.6rem;">📢</div>
+    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.88rem;margin-bottom:0.2rem;">Announcement</div>
+    <div style="font-size:0.75rem;color:var(--muted);">Post a notice for students</div>
+  </a>
+</div>
+
+<div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.9rem;margin-bottom:0.85rem;">Recently Added</div>
+<div class="tbl-wrap">
+  <table>
+    <thead><tr><th>Title</th><th>Type</th><th>Subject</th><th>Date</th></tr></thead>
+    <tbody>
+      {% for item in recent %}
+      <tr>
+        <td class="td-main">{{ item.title }}</td>
+        <td>{% if item.video_id is defined %}<span style="background:rgba(249,115,22,0.1);color:#fdba74;font-size:0.7rem;font-weight:700;padding:0.15rem 0.5rem;border-radius:4px;">🎬 Lecture</span>{% else %}<span style="background:rgba(251,191,36,0.1);color:#fde68a;font-size:0.7rem;font-weight:700;padding:0.15rem 0.5rem;border-radius:4px;">📄 PDF</span>{% endif %}</td>
+        <td><span class="badge badge-{{ item.subject|lower }}">{{ item.subject }}</span></td>
+        <td style="font-size:0.75rem;color:var(--muted);">{{ item.created_at[:10] if item.created_at else '–' }}</td>
+      </tr>
+      {% else %}
+      <tr class="empty-row"><td colspan="4">No content yet. Start by adding a lecture!</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends "admin/base.html" %}
+{% block title %}Announcements – Admin{% endblock %}
+{% block content %}
+<div class="page-hdr">
+  <div><div class="page-title">Announcements</div><div class="page-sub">Post notices shown to all students on their dashboard</div></div>
+</div>
+
+<div class="form-card" style="margin-bottom:2rem;">
+  <div style="font-family:'Syne',sans-serif;font-weight:700;margin-bottom:1rem;">Post New Announcement</div>
+  <form method="POST" action="/admin/announcements/add">
+    <div class="fg"><label>Title *</label><input type="text" name="title" placeholder="e.g. New FR lectures added for Chapter 5" required></div>
+    <div class="fg"><label>Message *</label><textarea name="body" placeholder="Write your announcement..." required></textarea></div>
+    <div class="form-row">
+      <div class="fg"><label>Icon / Emoji</label><input type="text" name="icon" placeholder="🎉" maxlength="4"></div>
+    </div>
+    <button type="submit" class="btn btn-primary">📢 Post Announcement</button>
+  </form>
+</div>
+
+<div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.9rem;margin-bottom:0.85rem;">Posted Announcements</div>
+{% for a in announcements %}
+<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.1rem 1.25rem;margin-bottom:0.65rem;display:flex;align-items:flex-start;gap:1rem;">
+  <div style="font-size:1.4rem;flex-shrink:0;">{{ a.icon or '📢' }}</div>
+  <div style="flex:1;">
+    <div style="font-weight:600;margin-bottom:0.25rem;">{{ a.title }}</div>
+    <div style="font-size:0.82rem;color:var(--muted);line-height:1.5;">{{ a.body }}</div>
+    <div style="font-size:0.7rem;color:var(--muted);margin-top:0.4rem;">{{ a.created_at }}</div>
+  </div>
+  <form method="POST" action="/admin/announcements/delete/{{ a.id }}" onsubmit="return confirm('Delete this announcement?')" style="flex-shrink:0;">
+    <button type="submit" class="btn btn-danger btn-sm">🗑️ Delete</button>
+  </form>
+</div>
+{% else %}
+<div style="text-align:center;padding:2.5rem;color:var(--muted);background:var(--card);border:1px solid var(--border);border-radius:14px;">
+  📢 No announcements yet. Post one above.
+</div>
+{% endfor %}
+{% endblock %}

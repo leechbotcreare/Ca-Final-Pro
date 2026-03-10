@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}CAFinalPro – CA Final Learning Platform{% endblock %}
+{% block body %}
+<style>
+nav{background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 5%;height:64px;position:sticky;top:0;z-index:50;}
+.nav-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.2rem;}
+.nav-logo span{color:var(--accent);}
+.nav-actions{display:flex;gap:0.75rem;align-items:center;}
+.btn-login{background:transparent;border:1px solid var(--border);color:var(--text);padding:0.48rem 1rem;border-radius:8px;font-size:0.83rem;font-family:'DM Sans',sans-serif;cursor:pointer;text-decoration:none;font-weight:500;transition:all 0.2s;}
+.btn-login:hover{border-color:var(--accent);color:var(--accent);}
+.btn-cta{background:var(--gradient);color:white;padding:0.52rem 1.1rem;border-radius:8px;font-size:0.83rem;font-family:'DM Sans',sans-serif;font-weight:600;text-decoration:none;transition:opacity 0.2s;}
+.btn-cta:hover{opacity:0.88;}
+
+.hero{text-align:center;padding:6rem 5% 4rem;max-width:760px;margin:0 auto;}
+.hero-tag{display:inline-block;font-size:0.72rem;color:var(--accent);background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.25);padding:0.3rem 0.9rem;border-radius:20px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:1.5rem;}
+.hero-title{font-family:'Syne',sans-serif;font-size:clamp(2rem,5vw,3.2rem);font-weight:800;line-height:1.15;margin-bottom:1.25rem;}
+.hero-title span{background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.hero-sub{font-size:1rem;color:var(--muted);line-height:1.7;margin-bottom:2.5rem;max-width:520px;margin-left:auto;margin-right:auto;}
+.hero-btns{display:flex;gap:0.85rem;justify-content:center;flex-wrap:wrap;}
+.hero-btns a{padding:0.78rem 1.75rem;border-radius:10px;font-size:0.92rem;font-weight:600;font-family:'DM Sans',sans-serif;text-decoration:none;transition:all 0.2s;}
+.hero-btns .primary{background:var(--gradient);color:white;}
+.hero-btns .primary:hover{opacity:0.88;}
+.hero-btns .secondary{background:transparent;border:1px solid var(--border);color:var(--text);}
+.hero-btns .secondary:hover{border-color:var(--accent);color:var(--accent);}
+
+.subjects{padding:3rem 5%;max-width:1100px;margin:0 auto;}
+.sec-hdr{text-align:center;margin-bottom:2.5rem;}
+.sec-label{font-size:0.72rem;color:var(--accent);text-transform:uppercase;letter-spacing:0.12em;font-weight:600;margin-bottom:0.5rem;}
+.sec-title{font-family:'Syne',sans-serif;font-size:1.75rem;font-weight:800;}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;}
+.subj-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.75rem;position:relative;overflow:hidden;transition:all 0.22s;}
+.subj-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--gradient);}
+.subj-card:not(.locked):hover{border-color:var(--accent);transform:translateY(-4px);}
+.subj-card.locked{opacity:0.55;cursor:not-allowed;}
+.subj-icon{font-size:2.2rem;margin-bottom:1rem;}
+.subj-name{font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;margin-bottom:0.4rem;}
+.subj-desc{font-size:0.8rem;color:var(--muted);line-height:1.6;margin-bottom:1rem;}
+.subj-count{font-size:0.75rem;color:var(--accent2);}
+.soon-tag{position:absolute;top:1rem;right:1rem;font-size:0.62rem;background:rgba(136,136,170,0.1);border:1px solid var(--border);color:var(--muted);padding:0.15rem 0.5rem;border-radius:4px;font-weight:700;}
+
+.features{padding:3rem 5%;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);}
+.features-inner{max-width:1100px;margin:0 auto;}
+.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:2.5rem;}
+.feat{padding:1.5rem;background:var(--card);border:1px solid var(--border);border-radius:14px;}
+.feat-icon{font-size:1.75rem;margin-bottom:0.75rem;}
+.feat-title{font-family:'Syne',sans-serif;font-weight:700;font-size:0.95rem;margin-bottom:0.4rem;}
+.feat-desc{font-size:0.8rem;color:var(--muted);line-height:1.6;}
+
+.footer{text-align:center;padding:2rem 5%;color:var(--muted);font-size:0.78rem;border-top:1px solid var(--border);}
+.footer a{color:var(--accent);}
+
+@media(max-width:768px){.grid{grid-template-columns:1fr;}.features-grid{grid-template-columns:1fr;}}
+</style>
+
+<nav>
+  <div class="nav-logo">CA<span>Final</span>Pro</div>
+  <div class="nav-actions">
+    <a href="/login" class="btn-login">Sign In</a>
+    <a href="/signup" class="btn-cta">Get Started →</a>
+  </div>
+</nav>
+
+<section>
+  <div class="hero">
+    <div class="hero-tag">🎓 CA Final Preparation Platform</div>
+    <h1 class="hero-title">Master CA Final with<br><span>Expert Video Lectures</span></h1>
+    <p class="hero-sub">Structured video lectures, comprehensive PDF notes, and a distraction-free learning experience — built for CA Final students.</p>
+    <div class="hero-btns">
+      <a href="/signup" class="primary">Start Learning Today →</a>
+      <a href="/login" class="secondary">Already a student? Sign In</a>
+    </div>
+  </div>
+</section>
+
+<section class="subjects">
+  <div class="sec-hdr">
+    <div class="sec-label">Course Catalogue</div>
+    <div class="sec-title">Group 1 Subjects</div>
+  </div>
+  <div class="grid">
+    <a href="/signup" style="text-decoration:none;color:inherit;">
+      <div class="subj-card">
+        <div class="subj-icon">📊</div>
+        <div class="subj-name">Financial Reporting (FR)</div>
+        <div class="subj-desc">Ind AS standards, consolidation, financial instruments, revenue recognition and more.</div>
+        <div class="subj-count">{{ fr_count }} lectures available</div>
+      </div>
+    </a>
+    <a href="/signup" style="text-decoration:none;color:inherit;">
+      <div class="subj-card">
+        <div class="subj-icon">📈</div>
+        <div class="subj-name">Adv. Financial Management</div>
+        <div class="subj-desc">Derivatives, risk management, portfolio theory, capital structure and M&A.</div>
+        <div class="subj-count">{{ afm_count }} lectures available</div>
+      </div>
+    </a>
+    <a href="/signup" style="text-decoration:none;color:inherit;">
+      <div class="subj-card">
+        <div class="subj-icon">🔍</div>
+        <div class="subj-name">Adv. Auditing & Ethics</div>
+        <div class="subj-desc">Standards on Auditing, CARO 2020, company audit, bank audit and professional ethics.</div>
+        <div class="subj-count">{{ aud_count }} lectures available</div>
+      </div>
+    </a>
+  </div>
+
+  {% if settings.get('show_group2', True) %}
+  <div style="text-align:center;margin-top:1.75rem;padding:1.25rem;background:var(--card);border:1px solid var(--border);border-radius:14px;color:var(--muted);font-size:0.85rem;">
+    🔒 <strong>Group 2</strong> — Coming Soon! SFM, Law, Costing & Tax subjects will be added shortly.
+  </div>
+  {% endif %}
+</section>
+
+<section class="features">
+  <div class="features-inner">
+    <div class="sec-hdr">
+      <div class="sec-label">Why Students Choose Us</div>
+      <div class="sec-title">Everything you need to clear CA Final</div>
+    </div>
+    <div class="features-grid">
+      <div class="feat"><div class="feat-icon">🎬</div><div class="feat-title">HD Video Lectures</div><div class="feat-desc">Watch high-quality lectures at your own pace. Pause, rewind and rewatch as many times as you need.</div></div>
+      <div class="feat"><div class="feat-icon">📄</div><div class="feat-title">PDF Study Notes</div><div class="feat-desc">Download comprehensive PDF notes for every chapter — concise summaries, solved examples and more.</div></div>
+      <div class="feat"><div class="feat-icon">📱</div><div class="feat-title">Study Anywhere</div><div class="feat-desc">Access your lectures and notes from any device — laptop, tablet or phone — anytime, anywhere.</div></div>
+      <div class="feat"><div class="feat-icon">📚</div><div class="feat-title">Chapter-wise Structure</div><div class="feat-desc">Every subject is broken into clear chapters so you always know exactly where you are in the syllabus.</div></div>
+      <div class="feat"><div class="feat-icon">🎯</div><div class="feat-title">ICAI Aligned</div><div class="feat-desc">All content strictly follows the ICAI Study Material and latest amendments for the current exam cycle.</div></div>
+      <div class="feat"><div class="feat-icon">🔒</div><div class="feat-title">Secure Platform</div><div class="feat-desc">Your access is personal and protected. Content is for enrolled students only.</div></div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <p>© 2024 CAFinalPro · Built for CA Final students · {% if settings.support_email %}<a href="mailto:{{ settings.support_email }}">{{ settings.support_email }}</a>{% endif %}</p>
+</footer>
+{% endblock %}

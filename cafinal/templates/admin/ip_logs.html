@@ -1,0 +1,61 @@
+{% extends "admin/base.html" %}
+{% block title %}IP Logs – Admin{% endblock %}
+{% block content %}
+<div class="page-hdr">
+  <div>
+    <div class="page-title">🚨 IP Login Logs</div>
+    <div class="page-sub">Students flagged for logging in from more than 3 IPs in a day (possible account sharing)</div>
+  </div>
+</div>
+
+{% if logs %}
+<div class="alert alert-error" style="margin-bottom:1.5rem;">⚠️ {{ logs|length }} flagged incident(s) detected</div>
+<div class="tbl-wrap" style="margin-bottom:2rem;">
+  <table>
+    <thead><tr><th>Date</th><th>Student</th><th>IPs Used</th><th>IP Addresses</th><th>Action</th></tr></thead>
+    <tbody>
+      {% for e in logs %}
+      <tr>
+        <td style="font-size:0.78rem;color:var(--muted);">{{ e.date }}</td>
+        <td class="td-main">{{ e.email }}</td>
+        <td><span class="badge" style="background:rgba(239,68,68,0.12);color:#fca5a5;">{{ e.ips|length }} IPs</span></td>
+        <td style="font-size:0.72rem;color:var(--muted);max-width:250px;">
+          {% for ip in e.ips %}<code>{{ ip }}</code>{% if not loop.last %}, {% endif %}{% endfor %}
+        </td>
+        <td>
+          <a href="/admin/users" class="btn btn-ghost btn-sm">View Student</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card" style="padding:2.5rem;text-align:center;color:var(--muted);">✅ No flagged IP incidents yet.</div>
+{% endif %}
+
+<div class="page-hdr" style="margin-top:2rem;"><div><div class="page-title" style="font-size:1rem;">All Login Records</div></div></div>
+<div class="tbl-wrap">
+  <table>
+    <thead><tr><th>Date</th><th>Student</th><th>IPs</th><th>Status</th></tr></thead>
+    <tbody>
+      {% for e in all_logs %}
+      <tr>
+        <td style="font-size:0.78rem;color:var(--muted);">{{ e.date }}</td>
+        <td style="font-size:0.83rem;">{{ e.email }}</td>
+        <td style="font-size:0.75rem;color:var(--muted);">{{ e.ips|length }}</td>
+        <td>
+          {% if e.flagged %}
+          <span class="badge" style="background:rgba(239,68,68,0.12);color:#fca5a5;">🚨 Flagged</span>
+          {% else %}
+          <span class="badge" style="background:rgba(34,197,94,0.08);color:#86efac;">✅ Normal</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4" style="text-align:center;color:var(--muted);padding:2rem;">No login records yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
